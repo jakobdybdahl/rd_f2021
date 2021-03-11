@@ -31,9 +31,9 @@ species particle skills: [moving] {
 	rgb default_color <- #blue;
 	rgb connected_color <- #green;
 	
-	list in_connection_radius -> {(agents_at_distance(comm_radius)) of_generic_species particle};
+	list in_connection_radius -> (agents_at_distance(comm_radius)) of_generic_species particle;
 	// TODO could it be done faster/better using each.comm_radius somehow?
-	list connected_particles -> {in_connection_radius where (each.in_connection_radius contains self)};
+	list connected_particles -> in_connection_radius where (each.in_connection_radius contains self);
 	// TODO Use matrix as rating DB? With particle, rating and timestamp
 	list trusted_particles <- [];
 	
