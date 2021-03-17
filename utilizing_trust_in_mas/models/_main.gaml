@@ -23,6 +23,7 @@ global {
 	init {
 		create benign number: 30;
 		create uncooperative number: 10;
+		create malicious number: 30;
 	}
 }
 
@@ -35,6 +36,7 @@ experiment utilizing_trust type: gui {
 			grid navigation_cell lines: #black;
 			species benign aspect: base;
 			species uncooperative aspect: base;
+			species malicious aspect: base;
 		}
 	}
 }
