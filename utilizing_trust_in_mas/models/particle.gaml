@@ -19,7 +19,8 @@ species particle skills: [moving] {
 	int comm_radius <- rnd(min_comm_radius, max_comm_radius);
 	geometry bounds <- circle(movement_radius, my_cell.location);
 	float broadcast_time <- 10.0;
-
+	
+	// Available computational power - could vary.
 	float available_power <- 100.0;
 	
 	rgb default_color <- #blue;
@@ -71,16 +72,16 @@ species particle skills: [moving] {
 	}
 	 
 	float compute(float bid) {
-		write 'called base compute';
-		return 0;
+		return -1;
 	}
 	
 	float bid {
+		// Instead of bidding with time, we are bidding with resource allocation
 		float bid <- rnd(0, available_power);
 		
 		// can we have multiple connections at once?
 		if available_power - bid < 0 {
-			return #infinity;
+			return 0;
 		}
 		
 		available_power <- available_power - bid;

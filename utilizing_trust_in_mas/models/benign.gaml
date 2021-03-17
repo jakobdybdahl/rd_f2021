@@ -15,6 +15,7 @@ species benign parent: particle {
 	rgb default_color <- #blue; 
 	
 	float compute(float bid) {
+		// We use all the power we bid with.
 		float power_used <- bid;
 		float power_alloc_ratio <- power_used / bid;
 		// Maybe flip and sometimes perform worse than expected?
