@@ -22,11 +22,20 @@ global {
 	}
 }
 
+species rating_record {
+	particle p <- nil; 
+	float global_rating <- 0.0;
+	float local_rating <- 0.0;
+	int encounters <- 0;
+	date latestEncounter <- nil;
+}
+
 species particle skills: [moving] {
 	navigation_cell my_cell <- one_of(navigation_cell);
 	int movement_radius <- rnd(min_movement_radius, max_movement_radius);
 	int comm_radius <- rnd(min_comm_radius, max_comm_radius);
 	geometry bounds <- circle(movement_radius, my_cell.location);
+	float broadcast_time <- 10.0;
 	
 	rgb default_color <- #blue;
 	rgb connected_color <- #green;
@@ -34,8 +43,8 @@ species particle skills: [moving] {
 	list in_connection_radius -> (agents_at_distance(comm_radius)) of_generic_species particle;
 	// TODO could it be done faster/better using each.comm_radius somehow?
 	list connected_particles -> in_connection_radius where (each.in_connection_radius contains self);
-	// TODO Use matrix as rating DB? With particle, rating and timestamp
-	list trusted_particles <- [];
+	list<rating_record> rating_db <- [];
+
 	
 	init {
 		location <- my_cell.location;
@@ -44,6 +53,25 @@ species particle skills: [moving] {
 	reflex move {
 		do wander(1.0, 100.0, bounds);
 	}
+	
+	reflex heavy_task when: flip(0.2) {
+		if(!empty(connected_particles)) {
+			loop connected over: connected_particles {
+				float result <- connected.compute();
+				do rate(result, connected);
+			}
+		}
+	}
+	
+	// How do we broadcast?? 
+	reflex broadcast when: every(broadcast_time #mn) {
+		loop connected over: connected_particles {
+			ask connected {
+				do receive(rating_db);
+			}
+		}
+	}
+	
 	
 	aspect base {
 		rgb pcolor <- (!empty(connected_particles)) ? connected_color : default_color;
@@ -54,6 +82,29 @@ species particle skills: [moving] {
 	 
 	float compute {
 		return 0;
+	}
+	
+	action rate(float res, particle connected) {
+		create rating_record number: 1 returns: record_list;
+		rating_record record <- record_list at 0;
+		
+		if(!empty(rating_db where (each.p = connected))) {
+			record <- rating_db first_with (each.p = connected);
+		} else {
+			record.p <- connected;
+		}
+		
+		rating_db <- rating_db - record;
+		
+		record.encounters <- record.encounters + 1;
+		record.latestEncounter <- date("2019-09-01-00-00-00");
+		record.local_rating <- record.local_rating + res;
+		
+		rating_db <- rating_db + record;
+	}
+	
+	action receive(list<rating_record> db) {
+		
 	}
 }
 
@@ -68,18 +119,15 @@ species benign parent: particle {
 species uncooperative parent: particle {
 	rgb default_color <- #red;
 	rgb connected_color <- #lightgreen;
+	
 	float compute {
 		return -1;
 	}
 }
 
-species malicious parent: particle {
+species malicious parent: particle { }
 
-}
-
-grid navigation_cell width: 50 height: 50 neighbors: 4 {
-	
-}
+grid navigation_cell width: 50 height: 50 neighbors: 4 { }
 
 experiment utilizing_trust type: gui {
 	output {
@@ -87,7 +135,6 @@ experiment utilizing_trust type: gui {
 			grid navigation_cell lines: #black;
 			species benign aspect: base;
 			species uncooperative aspect: base;
-			species particle aspect: base;
 		}
 	}
 }
