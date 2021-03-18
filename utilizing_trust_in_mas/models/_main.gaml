@@ -21,9 +21,9 @@ global {
 	int max_comm_radius <- 20;
 	
 	init {
-		create benign number: 30;
-		create uncooperative number: 10;
-		create malicious number: 30;
+		create benign number: 3;
+		create uncooperative number: 1;
+		create malicious number: 1;
 	}
 }
 

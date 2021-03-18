@@ -28,7 +28,8 @@ species particle skills: [moving] {
 	
 	list in_connection_radius -> (agents_at_distance(comm_radius)) of_generic_species particle;
 	list connected_particles -> in_connection_radius where (each.in_connection_radius contains self);
-	list<rating_record> rating_db <- [];
+	// list<rating_record> rating_db <- [];
+	map<string, rating_record> rating_db <- [];
 	
 	init {
 		location <- my_cell.location;
@@ -38,20 +39,31 @@ species particle skills: [moving] {
 		do wander(1.0, 100.0, bounds);
 	}
 	
-	reflex auction when: flip(0.2) {		
-		map<particle, float> bids <- nil;
+	reflex auction when: flip(0.02) {		
+		particle current_winner <- nil;
+		float highest_bid <- -1.0;
 		
 		if(!empty(connected_particles)) {
-			bids <- connected_particles as_map (each::0.0);
 			loop connected over: connected_particles {
-				put connected.bid() at: connected in: bids;
+				float bid <- connected.bid();
+				if bid > highest_bid {
+					if current_winner != nil {
+						current_winner.available_power <- current_winner.available_power + bid;
+					}
+					
+					current_winner <- connected;
+					highest_bid <- bid;
+				} else {
+					// lost bid, so restore power:
+					connected.available_power <- connected.available_power + bid;
+				}
+			}
+			
+			if highest_bid != 0 {
+				float res <- current_winner.compute(highest_bid);
+				do rate(res, current_winner);
 			}
 		}
-		
-		float winning_bid <- max(bids);
-		particle winner <- bids index_of winning_bid;
-		float res <- winner.compute(winning_bid);
-		do rate(res, winner);
 	}
 	
 	// How do we broadcast?? 
@@ -88,27 +100,25 @@ species particle skills: [moving] {
 		
 		return bid;
 	}
-	
+
 	action rate(float res, particle connected) {
 		create rating_record number: 1 returns: record_list;
 		rating_record record <- record_list at 0;
-		
-		if(!empty(rating_db where (each.p = connected))) {
-			record <- rating_db first_with (each.p = connected);
+
+		if rating_db contains_key connected.name {
+			record <- rating_db[connected.name];
 		} else {
 			record.p <- connected;
 		}
-		
-		rating_db <- rating_db - record;
 		
 		record.encounters <- record.encounters + 1;
 		record.latestEncounter <- date("2019-09-01-00-00-00");
 		record.local_rating <- record.local_rating + res;
 		
-		rating_db <- rating_db + record;
+		put record at: record.p.name in: rating_db;
 	}
 	
-	action receive(list<rating_record> db) {
-		
+	action receive(map<string, rating_record> db) {
+
 	}
 }
