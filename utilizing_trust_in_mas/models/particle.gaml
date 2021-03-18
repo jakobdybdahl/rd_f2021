@@ -119,6 +119,16 @@ species particle skills: [moving] {
 	}
 	
 	action receive(map<string, rating_record> db) {
-
+		loop new_record over: db.values {
+			rating_record current_record <- rating_db[new_record.p.name];
+			
+			if current_record.global_rating = 0 {
+				current_record.global_rating <- new_record.global_rating; 	
+			} else {
+				current_record.global_rating <- (current_record.global_rating + new_record.global_rating) / 2; 	
+			}
+			
+			put current_record at: current_record.p.name in: rating_db;
+		}
 	}
 }
