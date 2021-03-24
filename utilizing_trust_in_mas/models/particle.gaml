@@ -18,7 +18,7 @@ species particle skills: [moving] {
 	int movement_radius <- rnd(min_movement_radius, max_movement_radius);
 	int comm_radius <- rnd(min_comm_radius, max_comm_radius);
 	geometry bounds <- circle(movement_radius, my_cell.location);
-	float broadcast_time <- 10.0;
+	float broadcast_time <- 1.0;
 	
 	// Available computational power - could vary.
 	float available_power <- 100.0;
@@ -39,7 +39,7 @@ species particle skills: [moving] {
 		do wander(1.0, 100.0, bounds);
 	}
 	
-	reflex auction when: flip(0.02) {		
+	reflex auction when: flip(1) {		
 		particle current_winner <- nil;
 		float highest_bid <- -1.0;
 		
@@ -67,7 +67,7 @@ species particle skills: [moving] {
 	}
 	
 	// How do we broadcast?? 
-	reflex broadcast when: every(broadcast_time #mn) {
+	reflex broadcast {
 		loop connected over: connected_particles {
 			ask connected {
 				do receive(rating_db);
@@ -119,16 +119,23 @@ species particle skills: [moving] {
 	}
 	
 	action receive(map<string, rating_record> db) {
-		loop new_record over: db.values {
-			rating_record current_record <- rating_db[new_record.p.name];
+		loop receiving_record over: db.values {
+			create rating_record number: 1 returns: record_list;
+			rating_record record <- record_list at 0;
 			
-			if current_record.global_rating = 0 {
-				current_record.global_rating <- new_record.global_rating; 	
+			if (rating_db contains_key receiving_record.p.name) {
+				record <- rating_db[receiving_record.p.name];
 			} else {
-				current_record.global_rating <- (current_record.global_rating + new_record.global_rating) / 2; 	
+				record.p <- receiving_record.p;
 			}
 			
-			put current_record at: current_record.p.name in: rating_db;
+			if record.global_rating = 0 {
+				record.global_rating <- receiving_record.local_rating; 	
+			} else {
+				record.global_rating <- (record.global_rating + receiving_record.local_rating) / 2; 	
+			}
+			
+			put record at: record.p.name in: rating_db;
 		}
 	}
 }
