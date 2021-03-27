@@ -14,16 +14,35 @@ import 'particle.gaml'
 species malicious parent: particle {
 	rgb default_color <- #red;
 	
-	// Could get complicated by looking at the agents that is connected to this, and then bid a little higher, than we think they will - idk if that is possible.
-	// It is probably the same agents that is connected to the auctioneer.
-	
-	float compute(float bid) {
-		// We are not using all the power we bid with.
-		// Isn't this the same/equivalent as taking longer time than promised?
-		float power_used <- rnd(bid * 0.5, bid);
-		float power_alloc_ratio <- power_used / bid;
+	int bid(int expected_time) {
+		if computing_slots <= 0 {
+			return -1;
+		}
 		
-		available_power <- available_power + bid;
-		return power_alloc_ratio;
+		float bid <- gauss_rnd(rnd(expected_time * 0.7, expected_time), expected_time * 0.1);
+		current_bid <- bid;
+		return bid;
+	}
+	
+	action start_computing(int bid, particle auctioneer) {
+		if computing_slots <= 0 {
+			return -1;
+		}
+
+		computing_slots <- computing_slots - 1;
+		computing_start <- float(cycle);
+		computing_end <- cycle + gauss_rnd(bid, bid * 0.1); 
+		computing_for <- auctioneer;
+	}
+	
+	reflex complete_computing when: cycle >= computing_end {
+		computing_slots <- computing_slots + 1;
+		int result <- int(computing_end - (computing_start+current_bid));
+
+		ask computing_for {
+			do rate(result, myself);
+		}
+		
+		computing_end <- #infinity;
 	}
 }

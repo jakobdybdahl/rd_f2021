@@ -20,13 +20,10 @@ global {
 	int min_comm_radius <- 5;
 	int max_comm_radius <- 20;
 	
-	//list<particle> particles <- list<particle>(benign + uncooperative + malicious);
-	
 	float benign_rating <- 0.0;
 	float malicious_rating <- 0.0;
-	
-	reflex charts_data {
-		//write length(particles);
+
+	reflex charts_data when: every(4#cycles) {
 		list<float> benign_ratings;
 		loop b over: benign {
 			list<float> ratings;
@@ -57,9 +54,9 @@ global {
 	}
 	
 	init {
-		create benign number: 30;
+		create benign number: 10;
 		create uncooperative number: 0;
-		create malicious number: 30;
+		create malicious number: 10;
 	}
 }
 

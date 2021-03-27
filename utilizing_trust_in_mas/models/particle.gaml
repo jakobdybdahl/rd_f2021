@@ -20,15 +20,18 @@ species particle skills: [moving] {
 	geometry bounds <- circle(movement_radius, my_cell.location);
 	float broadcast_time <- 1.0;
 	
-	// Available computational power - could vary.
-	float available_power <- 100.0;
+	int computing_slots <- 1;
+	float computing_end <- #infinity;
+	float computing_start <- 0.0;
+	float current_bid <- 0.0;
+	particle computing_for <- nil;
 	
 	rgb default_color <- #blue;
 	rgb connected_color <- #green;
 	
 	list in_connection_radius -> (agents_at_distance(comm_radius)) of_generic_species particle;
 	list connected_particles -> in_connection_radius where (each.in_connection_radius contains self);
-	// list<rating_record> rating_db <- [];
+
 	map<string, rating_record> rating_db <- [];
 	
 	init {
@@ -39,29 +42,24 @@ species particle skills: [moving] {
 		do wander(1.0, 100.0, bounds);
 	}
 	
-	reflex auction when: flip(1) {		
+	reflex auction when: flip(0.2) {		
 		particle current_winner <- nil;
-		float highest_bid <- -1.0;
+		int highest_bid <- -1;
 		
 		if(!empty(connected_particles)) {
 			loop connected over: connected_particles {
-				float bid <- connected.bid();
+				int bid <- connected.bid(rnd(5,20));
 				if bid > highest_bid {
-					if current_winner != nil {
-						current_winner.available_power <- current_winner.available_power + bid;
-					}
-					
 					current_winner <- connected;
 					highest_bid <- bid;
-				} else {
-					// lost bid, so restore power:
-					connected.available_power <- connected.available_power + bid;
 				}
 			}
 			
-			if highest_bid != 0 {
-				float res <- current_winner.compute(highest_bid);
-				do rate(res, current_winner);
+			if highest_bid != 0 and current_winner != nil {
+				rating_db[current_winner.name].latestEncounter <- cycle;
+				ask current_winner {
+					do start_computing(highest_bid, myself);
+				}
 			}
 		}
 	}
@@ -75,6 +73,13 @@ species particle skills: [moving] {
 		}
 	}
 	
+	reflex decrease when: every(20#cycles) {
+		loop value over: rating_db.values {
+			if value.latestEncounter != 0 and cycle - value.latestEncounter > 100 {
+				value.local_rating <- value.local_rating * 0.95;
+			}
+		}
+	}
 	
 	aspect base {
 		rgb pcolor <- (!empty(connected_particles)) ? connected_color : default_color;
@@ -83,25 +88,15 @@ species particle skills: [moving] {
 		draw circle(comm_radius) color: #transparent border: #lightblue; 
 	}
 	 
-	float compute(float bid) {
-		return -1;
+	action start_computing(int bid, particle auctioneer) {
+		return;
 	}
 	
-	float bid {
-		// Instead of bidding with time, we are bidding with resource allocation
-		float bid <- rnd(0, available_power);
-		
-		// can we have multiple connections at once?
-		if available_power - bid < 0 {
-			return 0;
-		}
-		
-		available_power <- available_power - bid;
-		
-		return bid;
+	int bid(int expected_time) {
+		return -1;
 	}
 
-	action rate(float res, particle connected) {
+	action rate(int res, particle connected) {
 		create rating_record number: 1 returns: record_list;
 		rating_record record <- record_list at 0;
 
@@ -110,11 +105,12 @@ species particle skills: [moving] {
 		} else {
 			record.p <- connected;
 		}
-		
+
 		record.encounters <- record.encounters + 1;
-		record.latestEncounter <- date("2019-09-01-00-00-00");
-		record.local_rating <- record.local_rating + res;
-		
+		record.latestEncounter <- cycle;
+		// new_rating = old_rating + K1 * res + k2 * (e^(-curr_rating/K3)) where K1, K2 and K3 are configs
+		record.local_rating <- record.local_rating + (10 * res + 5 * exp(-record.local_rating/10));
+	
 		put record at: record.p.name in: rating_db;
 	}
 	

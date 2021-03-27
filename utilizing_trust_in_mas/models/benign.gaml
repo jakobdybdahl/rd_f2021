@@ -14,13 +14,36 @@ import 'particle.gaml'
 species benign parent: particle {
 	rgb default_color <- #blue; 
 	
-	float compute(float bid) {
-		// We use all the power we bid with.
-		float power_used <- bid;
-		float power_alloc_ratio <- power_used / bid;
-		// Maybe flip and sometimes perform worse than expected?
+	int bid(int expected_time) {
+		if computing_slots <= 0 {
+			return -1;
+		}
 		
-		available_power <- available_power + bid;
-		return power_alloc_ratio;
+		float bid <- gauss_rnd(expected_time, expected_time * 0.1);
+		current_bid <- bid;
+		
+		return bid;
+	}
+	
+	action start_computing(int bid, particle auctioneer) {
+		if computing_slots <= 0 {
+			return;
+		}
+
+		computing_slots <- computing_slots - 1;
+		computing_start <- float(cycle);
+		computing_end <- cycle + gauss_rnd(bid, bid * 0.1); 
+		computing_for <- auctioneer;
+	}
+	
+	reflex complete_computing when: cycle >= computing_end {
+		computing_slots <- computing_slots + 1;
+		int result <- int((computing_start+current_bid) - computing_end); // may allow some margin?
+
+		ask computing_for {
+			do rate(result, myself);
+		}
+		
+		computing_end <- #infinity;
 	}
 }

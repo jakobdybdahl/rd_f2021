@@ -17,5 +17,5 @@ species rating_record {
 	float global_rating <- 0.0;
 	float local_rating <- 0.0;
 	int encounters <- 0;
-	date latestEncounter <- nil;
+	int latestEncounter <- 0;
 }
