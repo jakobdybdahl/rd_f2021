@@ -22,8 +22,11 @@ global {
 	
 	float benign_rating <- 0.0;
 	float malicious_rating <- 0.0;
+	list<float> benign_global_ratings <- [];
+	list<float> malicious_global_rating <- [];
 
 	reflex charts_data when: every(4#cycles) {
+		// calculate the average global rating of benign agents
 		list<float> benign_ratings;
 		loop b over: benign {
 			list<float> ratings;
@@ -32,12 +35,11 @@ global {
  					add p.rating_db[b.name].global_rating to: ratings; 					
  				}
 			}
-			
 			add mean(ratings) to: benign_ratings;
 		}
-		
 		benign_rating <- mean(benign_ratings);
 		
+		// calculate the average global rating of malicious agents
 		list<float> malicious_ratings;
 		loop m over: malicious {
 			list<float> ratings;
@@ -46,10 +48,8 @@ global {
  					add p.rating_db[m.name].global_rating to: ratings; 					
  				}
 			}
-			
 			add mean(ratings) to: malicious_ratings;
 		}
-		
 		malicious_rating <- mean(malicious_ratings);
 	}
 	

@@ -56,7 +56,8 @@ species particle skills: [moving] {
 			}
 			
 			if highest_bid != 0 and current_winner != nil {
-				rating_db[current_winner.name].latestEncounter <- cycle;
+				// TODO should we store any encounter here, or first when we rate?
+				// rating_db[current_winner.name].latestEncounter <- cycle;
 				ask current_winner {
 					do start_computing(highest_bid, myself);
 				}
@@ -68,15 +69,17 @@ species particle skills: [moving] {
 	reflex broadcast {
 		loop connected over: connected_particles {
 			ask connected {
-				do receive(rating_db);
+				do receive(myself.rating_db, myself);
 			}
 		}
 	}
 	
 	reflex decrease when: every(20#cycles) {
-		loop value over: rating_db.values {
-			if value.latestEncounter != 0 and cycle - value.latestEncounter > 100 {
-				value.local_rating <- value.local_rating * 0.95;
+		loop record over: rating_db.values {
+			loop encounter over: record.encounters {
+				if (cycle - encounter.key > 100) {
+					encounter <- pair<int, float>({encounter.key, encounter.value * 0.95});
+				}
 			}
 		}
 	}
@@ -105,16 +108,23 @@ species particle skills: [moving] {
 		} else {
 			record.p <- connected;
 		}
-
-		record.encounters <- record.encounters + 1;
-		record.latestEncounter <- cycle;
+		
+		// calculate new local rating
 		// new_rating = old_rating + K1 * res + k2 * (e^(-curr_rating/K3)) where K1, K2 and K3 are configs
-		record.local_rating <- record.local_rating + (10 * res + 5 * exp(-record.local_rating/10));
+		float new_rating <- record.local_rating + (10 * res + 5 * exp(-record.local_rating/10));
+		record.local_rating <- new_rating;
+		
+		// store encounter and increase total number of encounters
+		add pair<int, float>(cycle, record.local_rating) at: 0 to: record.encounters;
+		if (length(record.encounters) = 100) {
+			remove 99 from: record.encounters;
+		}
+		record.nEncounters <- record.nEncounters + 1;
 	
 		put record at: record.p.name in: rating_db;
 	}
 	
-	action receive(map<string, rating_record> db) {
+	action receive(map<string, rating_record> db, particle from) {
 		loop receiving_record over: db.values {
 			create rating_record number: 1 returns: record_list;
 			rating_record record <- record_list at 0;
@@ -125,12 +135,9 @@ species particle skills: [moving] {
 				record.p <- receiving_record.p;
 			}
 			
-			if record.global_rating = 0 {
-				record.global_rating <- receiving_record.local_rating; 	
-			} else {
-				record.global_rating <- (record.global_rating + receiving_record.local_rating) / 2; 	
-			}
-			
+			record.global_ratings[from.name] <- receiving_record.local_rating;
+			record.global_rating <- mean(record.global_ratings.values);
+						
 			put record at: record.p.name in: rating_db;
 		}
 	}
