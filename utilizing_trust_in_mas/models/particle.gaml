@@ -29,6 +29,8 @@ species particle skills: [moving] {
 	rgb default_color <- #blue;
 	rgb connected_color <- #green;
 	
+	list<string> malicious_peers <- nil;
+	
 	list in_connection_radius -> (agents_at_distance(comm_radius)) of_generic_species particle;
 	list connected_particles -> in_connection_radius where (each.in_connection_radius contains self);
 
@@ -71,6 +73,14 @@ species particle skills: [moving] {
 				do receive(rating_db);
 			}
 		}
+	}
+	
+	reflex find_malicious when: flip(0) {
+		// GOAL: kmeans([[local_rating, global_rating], [local_rating, global_rating], ...])
+		list<list> kmeans_init <- nil;
+		loop record over: rating_db.values {
+			add [record.local_rating, record_global_rating] to: kmeans_init;
+		}		
 	}
 	
 	reflex decrease when: every(20#cycles) {
