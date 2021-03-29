@@ -54,7 +54,7 @@ global {
 	}
 	
 	init {
-		create benign number: 10;
+		create benign number: 30;
 		create uncooperative number: 0;
 		create malicious number: 10;
 	}

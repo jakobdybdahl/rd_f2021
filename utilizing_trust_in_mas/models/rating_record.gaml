@@ -17,6 +17,7 @@ species rating_record {
 	map<string, float> global_ratings <- [];
 	float global_rating <- 0.0;
 	float local_rating <- 0.0;
-	list<pair<int, float>> encounters <- []; // list of pairs containing: <cycle>::<rating>
+	map<int, float> encounters <- []; // list of pairs containing: <cycle>::<rating>
 	int nEncounters <- 0;
+	int latestEncounter <- 0;
 }
