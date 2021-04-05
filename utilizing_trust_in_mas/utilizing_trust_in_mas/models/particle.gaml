@@ -81,7 +81,7 @@ species particle skills: [moving] {
 	reflex find_malicious when: every(10#cycles) {
 		list<list> kmeans_init <- nil;
 		list<string> names <- nil;
-		do write_if("benign0", " ------------- ");
+//		do write_if("benign0", " ------------- ");
 		
 		int current_index <- 0;
 		loop record over: rating_db.values {
@@ -112,10 +112,10 @@ species particle skills: [moving] {
 			add rating_db[names[index]].p.name to: malicious_particles;
 		}
 		 
-		if self.name = 'benign0' {
-			loop r over: rating_db.values {
-				write r.encounters.values;
-			}
+//		if self.name = 'benign0' {
+//			loop r over: rating_db.values {
+//				write r.encounters.values;
+//			}
 //			write "----- 'BENIGN' -----";
 //			loop p over: benign_particles {
 //				rating_record r <- rating_db[p];
@@ -130,7 +130,7 @@ species particle skills: [moving] {
 //				write "-- " + mean(r.encounters.values);
 //				write "-- " + mean(r.global_ratings.values);
 //			}
-		}
+//		}
 
 	}
 	
