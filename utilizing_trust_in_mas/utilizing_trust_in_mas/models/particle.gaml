@@ -69,7 +69,6 @@ species particle skills: [moving] {
 		}
 	}
 	
-	// How do we broadcast?? 
 	reflex broadcast when: every(10#cycles) {
 		loop connected over: connected_particles {
 			ask connected {
@@ -78,10 +77,11 @@ species particle skills: [moving] {
 		}
 	}
 	
+	// What if we do not meet any malicious? Still two clusters.
+	// If a few benign is acting very good ("positive outliers"), then it damages the others. 
 	reflex find_malicious when: every(10#cycles) {
 		list<list> kmeans_init <- nil;
 		list<string> names <- nil;
-//		do write_if("benign0", " ------------- ");
 		
 		int current_index <- 0;
 		loop record over: rating_db.values {
@@ -89,7 +89,6 @@ species particle skills: [moving] {
 			float global_mean <- mean(record.global_ratings.values);
 			
 			if (local_mean != 0.0 and global_mean != 0.0) {
-				// do write_if("benign0", record.p.name + ": " + local_mean + ", " + global_mean);
 				add [local_mean, global_mean] to: kmeans_init;
 				add record.p.name to: names;
 				current_index <- current_index + 1;
@@ -100,7 +99,7 @@ species particle skills: [moving] {
 			return;
 		}
 		
-		list<list<int>> kmeans_result <- kmeans(kmeans_init, 2, 1000);
+		list<list<int>> kmeans_result <- kmeans(kmeans_init, 2, 500);
 		benign_particles <- nil;
 		malicious_particles <- nil;
 		
@@ -112,32 +111,24 @@ species particle skills: [moving] {
 			add rating_db[names[index]].p.name to: malicious_particles;
 		}
 		 
-//		if self.name = 'benign0' {
-//			loop r over: rating_db.values {
-//				write r.encounters.values;
-//			}
-//			write "----- 'BENIGN' -----";
-//			loop p over: benign_particles {
-//				rating_record r <- rating_db[p];
-//				write p;
-//				write "-- " + mean(r.encounters.values);
-//				write "-- " + mean(r.global_ratings.values);
-//			}
-//			write "----- 'MAL' --------";
-//			loop p over: malicious_particles {
-//				rating_record r <- rating_db[p];
-//				write p;
-//				write "-- " + mean(r.encounters.values);
-//				write "-- " + mean(r.global_ratings.values);
-//			}
-//		}
-
-	}
-	
-	action write_if(string p, string stuff) {
-		if p = self.name {
-			write stuff;
+		if self.name = 'benign0' {
+			write "--------------------";
+			write "----- 'BENIGN' -----";
+			loop p over: benign_particles {
+				rating_record r <- rating_db[p];
+				write p;
+				write "-- " + mean(r.encounters.values);
+				write "-- " + mean(r.global_ratings.values);
+			}
+			write "----- 'MAL' --------";
+			loop p over: malicious_particles {
+				rating_record r <- rating_db[p];
+				write p;
+				write "-- " + mean(r.encounters.values);
+				write "-- " + mean(r.global_ratings.values);
+			}
 		}
+
 	}
 	
 	reflex decrease when: every(20#cycles) {
@@ -177,16 +168,18 @@ species particle skills: [moving] {
 		
 		// calculate new local rating
 		// new_rating = old_rating + K1 * res + k2 * (e^(-curr_rating/K3)) where K1, K2 and K3 are configs
-		float new_rating <- record.local_rating + (10 * res + 5 * exp(-record.local_rating/10)) + 1;
-		record.local_rating <- new_rating < 0 ? 0 : new_rating;
+//		float new_rating <- record.local_rating + (10 * res + 5 * exp(-record.local_rating/10));
+		float new_rating <- (10 * res + 5 * exp(-record.local_rating/10));
 		
 		// store encounter and increase total number of encounters
-		record.encounters[cycle] <- record.local_rating;
-				
+		record.encounters[cycle] <- new_rating < 0 ? 0.1 : new_rating;
+		record.local_rating <- mean(record.encounters.values);
+		
 		if (length(record.encounters) > 100) {
 			int min_key <- min(record.encounters.keys);
 			remove key: min_key from: record.encounters;
 		}
+		
 		record.nEncounters <- record.nEncounters + 1;
 	
 		put record at: record.p.name in: rating_db;
