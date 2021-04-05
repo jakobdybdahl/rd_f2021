@@ -38,7 +38,7 @@ species benign parent: particle {
 	
 	reflex complete_computing when: cycle >= computing_end {
 		computing_slots <- computing_slots + 1;
-		int result <- int((computing_start+current_bid) - computing_end); // may allow some margin?
+		float result <- (computing_start+current_bid) - computing_end; // may allow some margin?
 
 		ask computing_for {
 			do rate(result, myself);

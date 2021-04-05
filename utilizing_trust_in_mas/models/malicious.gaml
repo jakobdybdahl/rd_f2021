@@ -21,6 +21,7 @@ species malicious parent: particle {
 		
 		float bid <- gauss_rnd(rnd(expected_time * 0.7, expected_time), expected_time * 0.1);
 		current_bid <- bid;
+		current_expection <- expected_time;
 		return bid;
 	}
 	
@@ -31,13 +32,13 @@ species malicious parent: particle {
 
 		computing_slots <- computing_slots - 1;
 		computing_start <- float(cycle);
-		computing_end <- cycle + gauss_rnd(bid, bid * 0.1); 
+		computing_end <- cycle + gauss_rnd(current_expection, current_expection * 0.1); 
 		computing_for <- auctioneer;
 	}
 	
 	reflex complete_computing when: cycle >= computing_end {
 		computing_slots <- computing_slots + 1;
-		int result <- int(computing_end - (computing_start+current_bid));
+		float result <- (computing_start+current_bid) - computing_end;
 
 		ask computing_for {
 			do rate(result, myself);
