@@ -9,6 +9,8 @@
 model agent
 
 import "_main.gaml"
+import 'submitter.gaml'
+import 'worker.gaml'
 
 species my_agent {
 	navigation_cell my_cell <- one_of(navigation_cell);

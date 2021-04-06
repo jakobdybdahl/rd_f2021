@@ -20,7 +20,8 @@ species work_unit {
 
 species job {
 	list<work_unit> work_units <- [];
-	int start_time <- 0;
-	int estimated_sequential_processing_time <- 0;
+	float start_time <- 0.0;
+	float end_time <- 0.0;
+	float estimated_sequential_processing_time <- 0.0;
 }
 
