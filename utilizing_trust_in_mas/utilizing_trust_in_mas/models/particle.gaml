@@ -30,6 +30,9 @@ species particle skills: [moving] {
 	rgb default_color <- #blue;
 	rgb connected_color <- #green;
 	
+	list<string> benign_particles <- nil;
+	list<string> malicious_particles <- nil;
+	
 	list in_connection_radius -> (agents_at_distance(comm_radius)) of_generic_species particle;
 	list connected_particles -> in_connection_radius where (each.in_connection_radius contains self);
 
@@ -49,7 +52,7 @@ species particle skills: [moving] {
 		
 		if(!empty(connected_particles)) {
 			loop connected over: connected_particles {
-				int bid <- connected.bid(rnd(5,20));
+				int bid <- connected.bid(10);
 				if bid < lowest_bid {
 					current_winner <- connected;
 					lowest_bid <- bid;
@@ -66,7 +69,6 @@ species particle skills: [moving] {
 		}
 	}
 	
-	// How do we broadcast?? 
 	reflex broadcast when: every(10#cycles) {
 		loop connected over: connected_particles {
 			ask connected {
@@ -74,7 +76,61 @@ species particle skills: [moving] {
 			}
 		}
 	}
+	
+	// What if we do not meet any malicious? Still two clusters.
+	// If a few benign is acting very good ("positive outliers"), then it damages the others. 
+	reflex find_malicious when: every(10#cycles) {
+		list<list> kmeans_init <- nil;
+		list<string> names <- nil;
+		
+		int current_index <- 0;
+		loop record over: rating_db.values {
+			float local_mean <- mean(record.encounters.values);
+			float global_mean <- mean(record.global_ratings.values);
+			
+			if (local_mean != 0.0 and global_mean != 0.0) {
+				add [local_mean, global_mean] to: kmeans_init;
+				add record.p.name to: names;
+				current_index <- current_index + 1;
+			}
+		}
+		
+		if length(kmeans_init) < 2 {
+			return;
+		}
+		
+		list<list<int>> kmeans_result <- kmeans(kmeans_init, 2, 500);
+		benign_particles <- nil;
+		malicious_particles <- nil;
+		
+		loop index over: kmeans_result[0] {
+			add rating_db[names[index]].p.name to: benign_particles;
+		}
+		
+		loop index over: kmeans_result[1] {
+			add rating_db[names[index]].p.name to: malicious_particles;
+		}
+		 
+		if self.name = 'benign0' {
+			write "--------------------";
+			write "----- 'BENIGN' -----";
+			loop p over: benign_particles {
+				rating_record r <- rating_db[p];
+				write p;
+				write "-- " + mean(r.encounters.values);
+				write "-- " + mean(r.global_ratings.values);
+			}
+			write "----- 'MAL' --------";
+			loop p over: malicious_particles {
+				rating_record r <- rating_db[p];
+				write p;
+				write "-- " + mean(r.encounters.values);
+				write "-- " + mean(r.global_ratings.values);
+			}
+		}
 
+	}
+	
 	reflex decrease when: every(20#cycles) {
 		loop record over: rating_db.values {
 			loop encounter_key over: record.encounters.keys {
@@ -112,16 +168,18 @@ species particle skills: [moving] {
 		
 		// calculate new local rating
 		// new_rating = old_rating + K1 * res + k2 * (e^(-curr_rating/K3)) where K1, K2 and K3 are configs
-		float new_rating <- record.local_rating + (10 * res + 5 * exp(-record.local_rating/10)) + 1;
-		record.local_rating <- new_rating < 0 ? 0 : new_rating;
+//		float new_rating <- record.local_rating + (10 * res + 5 * exp(-record.local_rating/10));
+		float new_rating <- (10 * res + 5 * exp(-record.local_rating/10));
 		
 		// store encounter and increase total number of encounters
-		record.encounters[cycle] <- record.local_rating;
-				
+		record.encounters[cycle] <- new_rating < 0 ? 0.1 : new_rating;
+		record.local_rating <- mean(record.encounters.values);
+		
 		if (length(record.encounters) > 100) {
 			int min_key <- min(record.encounters.keys);
 			remove key: min_key from: record.encounters;
 		}
+		
 		record.nEncounters <- record.nEncounters + 1;
 	
 		put record at: record.p.name in: rating_db;
