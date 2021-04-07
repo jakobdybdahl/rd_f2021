@@ -114,11 +114,11 @@ experiment utilizing_trust type: gui {
  	parameter "Maximum length of encounter list" var: maximum_encounter_length category: "Particle";
  	
  	// Malicious
- 	parameter "Variance factor" var: m_variance_factor category: "Malicious";
  	parameter "Lower bid factor" var: m_lower_bid_factor category: "Malicious";
+ 	parameter "Malicious variance factor" var: m_variance_factor category: "Malicious";
  	
  	// Benign
- 	parameter "Variance factor" var: b_variance_factor category: "Benign";
+ 	parameter "Benign variance factor" var: b_variance_factor category: "Benign";
 	
 	output {
 		display main_display {
