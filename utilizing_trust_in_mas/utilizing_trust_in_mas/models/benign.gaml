@@ -19,7 +19,7 @@ species benign parent: particle {
 			return -1;
 		}
 		
-		float bid <- gauss_rnd(expected_time, expected_time * 0.1);
+		float bid <- gauss_rnd(expected_time, expected_time * b_variance_factor);
 		current_bid <- bid;
 		
 		return bid;
@@ -32,7 +32,7 @@ species benign parent: particle {
 
 		computing_slots <- computing_slots - 1;
 		computing_start <- float(cycle);
-		computing_end <- cycle + gauss_rnd(bid, bid * 0.1); 
+		computing_end <- cycle + gauss_rnd(bid, bid * b_variance_factor); 
 		computing_for <- auctioneer;
 	}
 	
