@@ -18,7 +18,7 @@ species particle skills: [moving] {
 	int movement_radius <- rnd(min_movement_radius, max_movement_radius);
 	int comm_radius <- rnd(min_comm_radius, max_comm_radius);
 	geometry bounds <- circle(movement_radius, my_cell.location);
-	float broadcast_time <- 1.0;
+	int broadcast_cycles <- p_broadcast_cycles;
 	
 	int computing_slots <- 1;
 	float computing_end <- #infinity;
@@ -46,13 +46,13 @@ species particle skills: [moving] {
 		do wander(1.0, 100.0, bounds);
 	}
 	
-	reflex auction when: flip(0.2) {		
+	reflex auction when: flip(p_auction_proba) {		
 		particle current_winner <- nil;
 		int lowest_bid <- int(#infinity);
 		
 		if(!empty(connected_particles)) {
 			loop connected over: connected_particles {
-				int bid <- connected.bid(10);
+				int bid <- connected.bid(rnd(p_lower_expected_time, p_upper_expected_time));
 				if bid < lowest_bid {
 					current_winner <- connected;
 					lowest_bid <- bid;
@@ -69,7 +69,7 @@ species particle skills: [moving] {
 		}
 	}
 	
-	reflex broadcast when: every(10#cycles) {
+	reflex broadcast when: every(p_broadcast_cycles#cycles) {
 		loop connected over: connected_particles {
 			ask connected {
 				do receive(myself.rating_db where (each.local_rating != 0), myself);
@@ -79,7 +79,7 @@ species particle skills: [moving] {
 	
 	// What if we do not meet any malicious? Still two clusters.
 	// If a few benign is acting very good ("positive outliers"), then it damages the others. 
-	reflex find_malicious when: every(10#cycles) {
+	reflex find_malicious when: every(p_classification_cycles#cycles) {
 		list<list> kmeans_init <- nil;
 		list<string> names <- nil;
 		
@@ -99,7 +99,7 @@ species particle skills: [moving] {
 			return;
 		}
 		
-		list<list<int>> kmeans_result <- kmeans(kmeans_init, 2, 500);
+		list<list<int>> kmeans_result <- kmeans(kmeans_init, 2, p_kmeans_iterations);
 		benign_particles <- nil;
 		malicious_particles <- nil;
 		
@@ -131,11 +131,11 @@ species particle skills: [moving] {
 
 	}
 	
-	reflex decrease when: every(20#cycles) {
+	reflex decrease when: every(p_decrease_rating_cycle#cycles) {
 		loop record over: rating_db.values {
 			loop encounter_key over: record.encounters.keys {
 				if (cycle - encounter_key > 500) {
-					record.encounters[encounter_key] <- record.encounters[encounter_key] * 0.99;
+					record.encounters[encounter_key] <- record.encounters[encounter_key] * p_decreasing_factor;
 				}
 			}
 		}
@@ -167,15 +167,14 @@ species particle skills: [moving] {
 		}
 		
 		// calculate new local rating
-		// new_rating = old_rating + K1 * res + k2 * (e^(-curr_rating/K3)) where K1, K2 and K3 are configs
-//		float new_rating <- record.local_rating + (10 * res + 5 * exp(-record.local_rating/10));
-		float new_rating <- (10 * res + 5 * exp(-record.local_rating/10));
+		// new_rating = W1 * res + W2 * (e^(-curr_rating/W3)) where W1, W2 and W3 are configs
+		float new_rating <- (p_local_rating_w1 * res + p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
 		
 		// store encounter and increase total number of encounters
-		record.encounters[cycle] <- new_rating < 0 ? 0.1 : new_rating;
+		record.encounters[cycle] <- new_rating < 0 ? p_minimum_rating : new_rating;
 		record.local_rating <- mean(record.encounters.values);
 		
-		if (length(record.encounters) > 100) {
+		if (length(record.encounters) > maximum_encounter_length) {
 			int min_key <- min(record.encounters.keys);
 			remove key: min_key from: record.encounters;
 		}

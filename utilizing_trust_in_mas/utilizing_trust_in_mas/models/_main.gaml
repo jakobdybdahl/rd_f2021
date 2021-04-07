@@ -15,11 +15,37 @@ import 'malicious.gaml'
 
 
 global {
+	// Particle
 	int min_movement_radius <- 10;
 	int max_movement_radius <- 25;
 	int min_comm_radius <- 5;
 	int max_comm_radius <- 20;
 	
+	int p_broadcast_cycles <- 10;
+	int p_classification_cycles <- 10;
+	int p_kmeans_iterations <- 500;
+	float p_auction_proba <- 0.2;
+	int p_lower_expected_time <- 10;
+	int p_upper_expected_time <- 10;
+	int p_decrease_rating_cycle <- 20;
+	float p_decreasing_factor <- 0.99;
+	int p_local_rating_w1 <- 10;
+	int p_local_rating_w2 <- 5;
+	int p_local_rating_w3 <- 10;
+	float p_minimum_rating <- 0.1;
+	int maximum_encounter_length <- 100;
+	
+	// Benign
+	float b_variance_factor <- 0.1;
+
+	// Malicious
+	float m_variance_factor <- 0.1;
+	float m_lower_bid_factor <- 0.7;
+	
+	// Uncooperative
+	
+	
+	// Charts data
 	float benign_rating <- 0.0;
 	float malicious_rating <- 0.0;
 	list<float> benign_global_ratings <- [];
@@ -64,6 +90,36 @@ global {
 grid navigation_cell width: 10 height: 10 neighbors: 4 { }
 
 experiment utilizing_trust type: gui {
+	// Particle
+ 	parameter "Minimum Movement Radius" var: min_movement_radius category: "Particle";
+ 	parameter "Maximum Movement Radius" var: max_movement_radius category: "Particle";
+ 	parameter "Minimum Communication Radius" var: min_comm_radius category: "Particle";
+ 	parameter "Maximum Communication Radius" var: max_comm_radius category: "Particle";
+ 	
+ 	parameter "Number of cycles between broadcasts" var: p_broadcast_cycles category: "Particle";
+ 	parameter "Number of cycle between classification" var: p_classification_cycles category: "Particle";
+ 	parameter "Number of cycles between decreasing ratings" var: p_decrease_rating_cycle category: "Particle";
+ 	
+ 	parameter "Number of iterations in kmeans" var: p_kmeans_iterations category: "Particle";
+ 	parameter "Decreasing factor" var: p_decreasing_factor category: "Particle";
+ 	
+ 	parameter "Probability for holding an auction" var: p_auction_proba category: "Particle";
+ 	parameter "Lower bound for expectected time for auction item" var: p_lower_expected_time category: "Particle";
+ 	parameter "Upper bound for expectected time for auction item" var: p_upper_expected_time category: "Particle";
+ 	
+ 	parameter "Local rating W1" var: p_local_rating_w1 category: "Particle";
+ 	parameter "Local rating W2" var: p_local_rating_w2 category: "Particle";
+ 	parameter "Local rating W3" var: p_local_rating_w3 category: "Particle";
+ 	parameter "Minimum rating gain for interaction" var: p_minimum_rating category: "Particle";
+ 	parameter "Maximum length of encounter list" var: maximum_encounter_length category: "Particle";
+ 	
+ 	// Malicious
+ 	parameter "Lower bid factor" var: m_lower_bid_factor category: "Malicious";
+ 	parameter "Malicious variance factor" var: m_variance_factor category: "Malicious";
+ 	
+ 	// Benign
+ 	parameter "Benign variance factor" var: b_variance_factor category: "Benign";
+	
 	output {
 		display main_display {
 			grid navigation_cell lines: #black;
