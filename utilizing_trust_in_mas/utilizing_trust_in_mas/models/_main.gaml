@@ -23,10 +23,12 @@ global {
 	
 	int p_broadcast_cycles <- 10;
 	int p_classification_cycles <- 10;
+	int p_kmeans_iterations <- 500;
 	float p_auction_proba <- 0.2;
 	int p_lower_expected_time <- 10;
 	int p_upper_expected_time <- 10;
 	int p_decrease_rating_cycle <- 20;
+	float p_decreasing_factor <- 0.99;
 	int p_local_rating_w1 <- 10;
 	int p_local_rating_w2 <- 5;
 	int p_local_rating_w3 <- 10;
@@ -97,6 +99,9 @@ experiment utilizing_trust type: gui {
  	parameter "Number of cycles between broadcasts" var: p_broadcast_cycles category: "Particle";
  	parameter "Number of cycle between classification" var: p_classification_cycles category: "Particle";
  	parameter "Number of cycles between decreasing ratings" var: p_decrease_rating_cycle category: "Particle";
+ 	
+ 	parameter "Number of iterations in kmeans" var: p_kmeans_iterations category: "Particle";
+ 	parameter "Decreasing factor" var: p_decreasing_factor category: "Particle";
  	
  	parameter "Probability for holding an auction" var: p_auction_proba category: "Particle";
  	parameter "Lower bound for expectected time for auction item" var: p_lower_expected_time category: "Particle";

@@ -99,7 +99,7 @@ species particle skills: [moving] {
 			return;
 		}
 		
-		list<list<int>> kmeans_result <- kmeans(kmeans_init, 2, 500);
+		list<list<int>> kmeans_result <- kmeans(kmeans_init, 2, p_kmeans_iterations);
 		benign_particles <- nil;
 		malicious_particles <- nil;
 		
@@ -135,7 +135,7 @@ species particle skills: [moving] {
 		loop record over: rating_db.values {
 			loop encounter_key over: record.encounters.keys {
 				if (cycle - encounter_key > 500) {
-					record.encounters[encounter_key] <- record.encounters[encounter_key] * 0.99;
+					record.encounters[encounter_key] <- record.encounters[encounter_key] * p_decreasing_factor;
 				}
 			}
 		}
