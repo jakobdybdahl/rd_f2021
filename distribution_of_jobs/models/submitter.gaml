@@ -22,11 +22,10 @@ species submitter parent: component {
 			set start_time <- time;
 			myself.active_job <- self;
 		}		
-		// write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
 		
 		// create work units
 		int n_of_work_units <- rnd(2, 10);
-		loop i from: 0 to: n_of_work_units {
+		loop i from: 0 to: n_of_work_units-1 {
 			create work_unit {
 				set id <- i;
 				set processing_units <- rnd(1,20);
@@ -36,57 +35,47 @@ species submitter parent: component {
 			}
 		}
 		
+//		write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
+		
 		// map of workers <name::{declined,worker}>
 		map<string, pair<bool, worker>> workers <- (worker where (each.agent.name != self.agent.name)) as_map (each.name :: (false::each));
 		list<work_unit> wus <- active_job.work_units;
 		
-		int work_unit_index <- 0;
-		loop while: !(workers all_match each.key = true) and length(wus) > 0 {
-			loop w over: workers {
-				bool confirmed <- w.value.request_to_process(wus[work_unit_index]);
-				if (confirmed) {
-					// remove work unit from pool
-					
-					work_unit_index <- work_unit_index + 1;
+		// distribute job to workers as long there are workers willing to accept work and there are unqueud work units
+		int wu_index <- 0;
+		loop while: (workers one_matches (each.key = false)) and (wu_index < length(wus)) {
+			loop w over: workers where (each.key = false) {
+				bool accepted <- w.value.request_to_process(wus[wu_index]);
+				if (accepted) {
+					// increment index to next work unit to process
+//					write 'accepted: work unit #' + wus[wu_index].id + ' accepted by ' + w.value.name;
+					wu_index <- wu_index + 1;
+					// break loop if we have processed the last work_unit
+					if (wu_index = length(wus)) {
+						break;
+					}
 				} else {
+//					write 'declined: work unit #' + wus[wu_index].id + ' declined by ' + w.value.name;
 					workers[w.value.name] <- true::w.value;
 				}
 			}
-		}		
+		}
 		
-		loop i from: 0 to: min(length(workers)-1, n_of_work_units-1) {
-			create work_unit {
-				set id <- i + 1;
-				set processing_units <- rnd(1,20);
-				set initial_processing_units <- self.processing_units;
-				set requester <- myself;
-				add self at: 0 to: myself.active_job.work_units;
-				// TODO use confirmed to something
-				bool confirmed <- workers[i].request_to_process(self);	
+		if (length(wus) - wu_index > 0) {
+			// there are more work units to process - add them to own queue
+			loop i from: wu_index to: length(wus)-1 {
+				add wus[i] at: 0 to: work_queue;
 			}
 		}
 		
-		if (n_of_work_units-1 > length(workers)-1) {
-			loop i from: length(workers) to: n_of_work_units-1 {
-				create work_unit {
-					set id <- i + 1;
-					set processing_units <- rnd(1,20);
-					set initial_processing_units <- self.processing_units;
-					set requester <- myself;
-					add self at: 0 to: myself.active_job.work_units;
-					add self at: 0 to: myself.work_queue;
-				}
-			}
-		}
-		
+		// calculate estimated sequential processing time (used to calculate speedup)
 		loop wu over: active_job.work_units {
 			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + (wu.initial_processing_units / processing_power);
 		}
 	}
 	
 	action receive_work_unit_result(component from, int work_unit_id, int result) {
-		// write self.name + ': received work result from ' + from.name + ' of ' + result;
-		active_job.work_units[work_unit_id-1].has_been_processed <- true;
+		active_job.work_units[work_unit_id].has_been_processed <- true;
 		
 		if (empty(active_job.work_units where (each.has_been_processed = false))) {
 			// there are no work units which has not been processed			
@@ -98,7 +87,7 @@ species submitter parent: component {
 					do die;
 				}
 			}
-			active_job <- nil;
+			active_job <- nil; // active job is not 'killed' since the result should be saved.
 		}
 	}
 }

@@ -13,15 +13,29 @@ import 'submitter.gaml'
 global {
 	list<string> legend <- [];
 	list<unknown> values <- [];
+	float avg_speedup <- 0.0;
 	
 	init {
 		create my_agent number: 5;
 	}
 	
-	reflex set_jobs {
+	reflex set_speedups {
 		list<job> jobs <- job where (each != nil and each.end_time != 0);
-		legend <- distribution_of (jobs collect (each.estimated_sequential_processing_time / (each.end_time - each.start_time))) at 'legend';
-		values <- distribution_of (jobs collect (each.estimated_sequential_processing_time / (each.end_time - each.start_time))) at 'values';
+		list<float> speedups <- [];
+		loop j over: jobs {
+			float speedup <- 0.0;			
+			if (j.start_time = j.end_time) {
+				speedup <- j.estimated_sequential_processing_time;
+			} else {
+				speedup <- j.estimated_sequential_processing_time / (j.end_time - j.start_time);
+			}
+			add speedup at: 0 to: speedups;
+		}
+		
+		avg_speedup <- mean(speedups);
+		
+		legend <- distribution_of (speedups) at 'legend';
+		values <- distribution_of (speedups) at 'values';
 	}
 }
 
@@ -39,5 +53,7 @@ experiment distributing_jobs type: gui {
 					datalist legend value: values;
 				}
 			}
+			
+			monitor "Average speedup" value: avg_speedup;
 		}
 	}

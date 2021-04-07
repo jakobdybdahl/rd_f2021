@@ -20,7 +20,7 @@ species component {
 		// get the last one in queue (the oldest)
 		work_unit wu <- work_queue[length(work_queue)-1];
 		
-		// write self.name + ': doing work of id ' + wu.id + ' for ' + wu.requester.name;
+//		write self.name + ': doing work of id ' + wu.id + ' for ' + wu.requester.name;
 				
 		// update processing time
 		wu.processing_units <- wu.processing_units - self.processing_power;
