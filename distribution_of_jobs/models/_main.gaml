@@ -15,8 +15,15 @@ global {
 	list<unknown> values <- [];
 	float avg_speedup <- 0.0;
 	
+	list<job> slow_jobs <- [];
+	
 	init {
-		create my_agent number: 5;
+		create my_agent number: 10;
+		seed <- 10.0;
+	}
+	
+	reflex find_slow_jobs {
+		slow_jobs <- job where ((each.end_time != 0) and (each.estimated_sequential_processing_time < (each.end_time - each.start_time)));
 	}
 	
 	reflex set_speedups {
@@ -42,18 +49,26 @@ global {
 grid navigation_cell width: 10 height: 10 neighbors: 4 { }
 
 experiment distributing_jobs type: gui {
-		output {
-			display main_display {
-				grid navigation_cell lines: #black;
-				species my_agent aspect: base;
-			}
-			
-			display chart_display {
-				chart "speedup_chart" type: histogram {
-					datalist legend value: values;
-				}
-			}
-			
-			monitor "Average speedup" value: avg_speedup;
-		}
+	init {
+		seed <- 10.0;
+		write seed;
 	}
+	
+	output {
+		display main_display {
+			grid navigation_cell lines: #black;
+			species my_agent aspect: base;
+		}
+		
+		display chart_display {
+			chart "speedup_chart" type: histogram {
+				datalist legend value: values;
+			}
+		}
+		
+		monitor "Average speedup" value: avg_speedup;
+		monitor "Seed" value: seed;
+		monitor "Slow jobs" value: length(slow_jobs);
+		monitor "Number of finished jobs" value: length(job where (each.end_time != 0));
+	}
+}

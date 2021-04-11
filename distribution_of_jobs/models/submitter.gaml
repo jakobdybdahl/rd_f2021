@@ -14,7 +14,6 @@ import 'component.gaml'
 
 species submitter parent: component {
 	job active_job <- nil;
-	int processing_power <- 1;
 	
 	reflex do_job when: flip(0.05) and active_job = nil {
 		// create job
@@ -28,7 +27,7 @@ species submitter parent: component {
 		loop i from: 0 to: n_of_work_units-1 {
 			create work_unit {
 				set id <- i;
-				set processing_units <- rnd(1,20);
+				set processing_units <- rnd(1,10);
 				set initial_processing_units <- self.processing_units;
 				set requester <- myself;
 				add self at: 0 to: myself.active_job.work_units;
@@ -63,6 +62,7 @@ species submitter parent: component {
 		
 		if (length(wus) - wu_index > 0) {
 			// there are more work units to process - add them to own queue
+			write self.name + ': adding ' + (length(wus) - wu_index) + ' to own queue';
 			loop i from: wu_index to: length(wus)-1 {
 				add wus[i] at: 0 to: work_queue;
 			}
@@ -70,8 +70,9 @@ species submitter parent: component {
 		
 		// calculate estimated sequential processing time (used to calculate speedup)
 		loop wu over: active_job.work_units {
-			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + (wu.initial_processing_units / processing_power);
+			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + wu.initial_processing_units;
 		}
+		active_job.estimated_sequential_processing_time <- ceil(active_job.estimated_sequential_processing_time / processing_power);
 	}
 	
 	action receive_work_unit_result(component from, int work_unit_id, int result) {
@@ -84,7 +85,7 @@ species submitter parent: component {
 			// clear active job and work units;
 			loop wu over: active_job.work_units {
 				ask wu {
-					do die;
+					 do die;
 				}
 			}
 			active_job <- nil; // active job is not 'killed' since the result should be saved.

@@ -15,7 +15,8 @@ import 'worker.gaml'
 species my_agent {
 	navigation_cell my_cell <- one_of(navigation_cell);
 	rgb color <- nil;
-	int processing_power <- 1;
+//	int processing_power <- rnd(1,10);
+	int processing_power <- 5;
 	submitter submitter <- nil;
 	worker worker <- nil;
 	
@@ -25,11 +26,13 @@ species my_agent {
 		create submitter {
 			myself.submitter <- self;
 			self.agent <- myself;
+			self.processing_power <- myself.processing_power;
 		}
 		
 		create worker {
 			myself.worker <- self;
 			self.agent <- myself;
+			self.processing_power <- myself.processing_power;
 		}
 	}
 	
