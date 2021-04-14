@@ -32,8 +32,8 @@ species particle skills: [moving] {
 	rgb default_color <- #blue;
 	rgb connected_color <- #green;
 	
-	list<string> benign_particles <- nil;
-	list<string> malicious_particles <- nil;
+	list<particle> benign_particles <- nil;
+	list<particle> malicious_particles <- nil;
 	int distance_treshold <- p_distance_treshold;
 	
 	list in_connection_radius -> (agents_at_distance(comm_radius)) of_generic_species particle;
@@ -72,10 +72,10 @@ species particle skills: [moving] {
 	
 	reflex classify when: every(p_classification_cycles#cycles) {
 		list<list> kmeans_init <- nil;
-		list<string> names <- nil;
+		list<particle> particles <- nil;
 		list<point> points <- nil;
-		list<string> cluster_one_names <- nil;
-		list<string> cluster_two_names <- nil;
+		list<particle> cluster_one_names <- nil;
+		list<particle> cluster_two_names <- nil;
 		
 		loop record over: rating_db.values {
 			float local_mean <- mean(record.encounters.values);
@@ -83,7 +83,7 @@ species particle skills: [moving] {
 			
 			if (local_mean != 0.0 and global_mean != 0.0) {
 				add [local_mean, global_mean] to: kmeans_init;
-				add record.p.name to: names;
+				add record.p to: particles;
 				add point(local_mean, global_mean) to: points;
 			}
 		}
@@ -98,12 +98,12 @@ species particle skills: [moving] {
 		list<point> cluster_two_points <- nil;
 		
 		loop index over: kmeans_result[0] {
-			add rating_db[names[index]].p.name to: cluster_one_names;
+			add rating_db[particles[index].name].p to: cluster_one_names;
 			add points[index] to: cluster_one_points;
 		}
 		
 		loop index over: kmeans_result[1] {
-			add rating_db[names[index]].p.name to: cluster_two_names;
+			add rating_db[particles[index].name].p to: cluster_two_names;
 			add points[index] to: cluster_two_points;
 		}
 		
@@ -127,27 +127,27 @@ species particle skills: [moving] {
 		cluster_one_names <- nil;
 		cluster_two_names <- nil;
 		 
-//		if self.name = 'benign0' {
-//			write "--------------------";
-//			write "----- MEANS -----";
-//			write "cluster 1: " + mean_cluster_one;
-//			write "cluster 2: " + mean_cluster_two;
-//			write "dist: " + distance_to(mean_cluster_one, mean_cluster_two);
-//			write "----- BENIGN -----";
-//			loop p over: benign_particles {
-//				rating_record r <- rating_db[p];
-//				write p;
-//				write "-- " + mean(r.encounters.values);
-//				write "-- " + mean(r.global_ratings.values);
-//			}
-//			write "----- MAL --------";
-//			loop p over: malicious_particles {
-//				rating_record r <- rating_db[p];
-//				write p;
-//				write "-- " + mean(r.encounters.values);
-//				write "-- " + mean(r.global_ratings.values);
-//			}
-//		}
+		if self.name = 'benign0' {
+			write "--------------------";
+			write "----- MEANS -----";
+			write "cluster 1: " + mean_cluster_one;
+			write "cluster 2: " + mean_cluster_two;
+			write "dist: " + distance_to(mean_cluster_one, mean_cluster_two);
+			write "----- BENIGN -----";
+			loop p over: benign_particles {
+				rating_record r <- rating_db[p.name];
+				write p;
+				write "-- " + mean(r.encounters.values);
+				write "-- " + mean(r.global_ratings.values);
+			}
+			write "----- MAL --------";
+			loop p over: malicious_particles {
+				rating_record r <- rating_db[p.name];
+				write p;
+				write "-- " + mean(r.encounters.values);
+				write "-- " + mean(r.global_ratings.values);
+			}
+		}
 
 	}
 	

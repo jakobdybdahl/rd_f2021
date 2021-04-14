@@ -33,10 +33,18 @@ species submitter parent: base_component {
 			}
 		}
 		
-		write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
+//		write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
 		
 		// map of connected workers <name::{declined,worker}>
-		list<worker> c_workers <- self.particle.connected_particles collect each.worker;
+		list<worker> c_workers <- nil;
+		if empty(self.particle.benign_particles) or flip(exp(-cycle / 250)) {
+			c_workers <- self.particle.connected_particles collect each.worker;	
+		} else {
+			c_workers <- (self.particle.connected_particles where (self.particle.benign_particles contains each)) collect each.worker;				
+		}
+		
+//		c_workers <- self.particle.connected_particles collect each.worker;
+		
 		map<string, pair<bool, worker>> workers <- c_workers as_map (each.name :: (false::each));
 		list<work_unit> wus <- active_job.work_units;
 		
@@ -62,7 +70,7 @@ species submitter parent: base_component {
 			}
 			if (lowest_bidder.value != nil) {
 				// some worker came with a better bid than our own
-				write self.particle.name + '/' + self.name + ': asking ' + lowest_bidder.value.particle.name + '/' + lowest_bidder.value.name + '(bid = ' + lowest_bidder.key + ', p = ' + lowest_bidder.value.processing_power + ') to process work unit #' + wus[wu_index].id + '(units = ' + wus[wu_index].processing_units + ')';
+//				write self.particle.name + '/' + self.name + ': asking ' + lowest_bidder.value.particle.name + '/' + lowest_bidder.value.name + '(bid = ' + lowest_bidder.key + ', p = ' + lowest_bidder.value.processing_power + ') to process work unit #' + wus[wu_index].id + '(units = ' + wus[wu_index].processing_units + ')';
 				wus[wu_index].bidder <- lowest_bidder; // safe bidder for rating later
 				ask lowest_bidder.value {
 					do start_processing(wus[wu_index]);
@@ -70,7 +78,7 @@ species submitter parent: base_component {
 				wu_index <- wu_index + 1;
 			} else {
 				// if own bid is better, add to own queue
-				write self.particle.name + '/' + self.name + ': adding work unit #' + wus[wu_index].id + '(units = ' + wus[wu_index].processing_units + ') to own queue (bid = ' + own_bid + ')';
+//				write self.particle.name + '/' + self.name + ': adding work unit #' + wus[wu_index].id + '(units = ' + wus[wu_index].processing_units + ') to own queue (bid = ' + own_bid + ')';
 				add wus[wu_index] at: 0 to: work_queue;
 				wu_index <- wu_index + 1;
 			}
@@ -78,19 +86,22 @@ species submitter parent: base_component {
 		
 		if (length(wus) - wu_index > 0) {
 			// there are more work units to process - add them to own queue
-			write self.name + ': adding ' + (length(wus) - wu_index) + ' to own queue';
+//			write self.name + ': adding ' + (length(wus) - wu_index) + ' to own queue';
 			loop i from: wu_index to: length(wus)-1 {
 				add wus[i] at: 0 to: work_queue;
 			}
 		}
 		
-		// calculate estimated sequential processing time (used to calculate speedup)
+		// -- calculate estimated sequential processing time (used to calculate speedup) --
+		// sum up existing work units in queue
 		loop wu_in_queue over: work_queue {
 			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + wu_in_queue.processing_units;
-		}		
+		}
+		// sum up work units of job		
 		loop wu over: active_job.work_units {
 			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + wu.initial_processing_units;
 		}
+		// calculate sequential processing time
 		active_job.estimated_sequential_processing_time <- ceil(active_job.estimated_sequential_processing_time / processing_power);
 	}
 	
@@ -109,6 +120,7 @@ species submitter parent: base_component {
 					ask self.particle {
 						do rate(res, wu.bidder.value.particle);
 					}
+					active_job.acc_bid_diff <- active_job.acc_bid_diff + int(abs(res));
 				}
 			}
 			

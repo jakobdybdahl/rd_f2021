@@ -52,6 +52,12 @@ global {
 	list<float> malicious_global_rating <- [];
 	float avg_speedup <- 0.0;
 	
+	list<job> slow_jobs <- [];
+	
+	reflex find_slow_jobs {
+		slow_jobs <- job where ((each.end_time != 0) and (each.estimated_sequential_processing_time < (each.end_time - each.start_time + each.acc_bid_diff)));
+	}
+	
 	reflex set_speedup {
 		list<job> jobs <- job where (each != nil and each.end_time != 0);
 		list<float> speedups <- [];
@@ -60,7 +66,7 @@ global {
 			if (j.start_time = j.end_time) {
 				speedup <- j.estimated_sequential_processing_time;
 			} else {
-				speedup <- j.estimated_sequential_processing_time / (j.end_time - j.start_time);
+				speedup <- j.estimated_sequential_processing_time / (j.end_time - j.start_time + j.acc_bid_diff);
 			}
 			add speedup at: 0 to: speedups;
 		}
@@ -155,5 +161,7 @@ experiment utilizing_trust type: gui {
 			}
 		}
 		monitor "Average speedup" value: avg_speedup;
+		monitor "Slow jobs" value: length(slow_jobs);
+		monitor "Number of jobs" value: length(job);
 	}
 }
