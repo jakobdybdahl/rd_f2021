@@ -13,7 +13,7 @@ import "job.gaml"
 
 species base_component {
 	particle particle <- nil;
-	int processing_power <- 1;
+	int processing_power <- 20;
 	list<work_unit> work_queue <- [];
 	
 	reflex do_work when: length(work_queue) > 0 {
@@ -34,9 +34,7 @@ species base_component {
 		if (processing_units_left <= 0) {
 			// inform requester about result 
 			ask wu.requester {
-				// TODO how to calculate result?
-				int result <- 1;
-				do receive_work_unit_result(myself, wu.id, result);
+				do receive_work_unit_result(myself, wu.id);
 			}
 			// remove work unit from queue
 			remove index: length(work_queue)-1 from: work_queue;	

@@ -43,20 +43,23 @@ species submitter parent: component {
 		// distribute job to workers as long there are workers willing to accept work and there are unqueud work units
 		int wu_index <- 0;
 		loop while: (workers one_matches (each.key = false)) and (wu_index < length(wus)) {
+			pair<int, worker> lowest_bidder <- #infinity::nil;
 			loop w over: workers where (each.key = false) {
-				bool accepted <- w.value.request_to_process(wus[wu_index]);
-				if (accepted) {
-					// increment index to next work unit to process
-//					write 'accepted: work unit #' + wus[wu_index].id + ' accepted by ' + w.value.name;
-					wu_index <- wu_index + 1;
-					// break loop if we have processed the last work_unit
-					if (wu_index = length(wus)) {
-						break;
-					}
-				} else {
+				pair<bool, int> bid <- w.value.request_to_process(wus[wu_index]);
+				if (bid.key = true and lowest_bidder.key > bid.value) { 
+					// request is accepted and better than previous
+					lowest_bidder <- (bid.value)::w.value;
+				} else if (bid.key = false) {
 //					write 'declined: work unit #' + wus[wu_index].id + ' declined by ' + w.value.name;
 					workers[w.value.name] <- true::w.value;
 				}
+			}
+			if (lowest_bidder.value != nil) {
+//				write self.name + ': asking ' + lowest_bidder.value.name + ' to process work unit #' + wus[wu_index].id;
+				ask lowest_bidder.value {
+					do start_processing(wus[wu_index]);
+				}
+				wu_index <- wu_index + 1;
 			}
 		}
 		

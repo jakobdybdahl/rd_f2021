@@ -12,6 +12,8 @@ model particle
 
 import '_main.gaml'
 import 'rating_record.gaml'
+import 'component/submitter.gaml'
+import 'component/worker.gaml'
 
 species particle skills: [moving] {
 	navigation_cell my_cell <- one_of(navigation_cell);
@@ -36,38 +38,28 @@ species particle skills: [moving] {
 	
 	list in_connection_radius -> (agents_at_distance(comm_radius)) of_generic_species particle;
 	list connected_particles -> in_connection_radius where (each.in_connection_radius contains self);
+	
+	worker worker <- nil;
+	submitter submitter <- nil;
 
 	map<string, rating_record> rating_db <- [];
 	
 	init {
 		location <- my_cell.location;
+		
+		create submitter {
+			myself.submitter <- self;
+			self.particle <- myself;
+		}
+		
+		create worker {
+			myself.worker <- self;
+			self.particle <- myself;
+		}
 	}
 	
 	reflex move {
 		do wander(1.0, 100.0, bounds);
-	}
-	
-	reflex auction when: flip(p_auction_proba) {		
-		particle current_winner <- nil;
-		int lowest_bid <- int(#infinity);
-		
-		if(!empty(connected_particles)) {
-			loop connected over: connected_particles {
-				int bid <- connected.bid(rnd(p_lower_expected_time, p_upper_expected_time));
-				if bid < lowest_bid {
-					current_winner <- connected;
-					lowest_bid <- bid;
-				}
-			}
-			
-			if lowest_bid != #infinity and current_winner != nil {
-				// TODO should we store any encounter here, or first when we rate?
-				// rating_db[current_winner.name].latestEncounter <- cycle;
-				ask current_winner {
-					do start_computing(lowest_bid, myself);
-				}
-			}
-		}
 	}
 	
 	reflex broadcast when: every(p_broadcast_cycles#cycles) {
@@ -135,27 +127,27 @@ species particle skills: [moving] {
 		cluster_one_names <- nil;
 		cluster_two_names <- nil;
 		 
-		if self.name = 'benign0' {
-			write "--------------------";
-			write "----- MEANS -----";
-			write "cluster 1: " + mean_cluster_one;
-			write "cluster 2: " + mean_cluster_two;
-			write "dist: " + distance_to(mean_cluster_one, mean_cluster_two);
-			write "----- BENIGN -----";
-			loop p over: benign_particles {
-				rating_record r <- rating_db[p];
-				write p;
-				write "-- " + mean(r.encounters.values);
-				write "-- " + mean(r.global_ratings.values);
-			}
-			write "----- MAL --------";
-			loop p over: malicious_particles {
-				rating_record r <- rating_db[p];
-				write p;
-				write "-- " + mean(r.encounters.values);
-				write "-- " + mean(r.global_ratings.values);
-			}
-		}
+//		if self.name = 'benign0' {
+//			write "--------------------";
+//			write "----- MEANS -----";
+//			write "cluster 1: " + mean_cluster_one;
+//			write "cluster 2: " + mean_cluster_two;
+//			write "dist: " + distance_to(mean_cluster_one, mean_cluster_two);
+//			write "----- BENIGN -----";
+//			loop p over: benign_particles {
+//				rating_record r <- rating_db[p];
+//				write p;
+//				write "-- " + mean(r.encounters.values);
+//				write "-- " + mean(r.global_ratings.values);
+//			}
+//			write "----- MAL --------";
+//			loop p over: malicious_particles {
+//				rating_record r <- rating_db[p];
+//				write p;
+//				write "-- " + mean(r.encounters.values);
+//				write "-- " + mean(r.global_ratings.values);
+//			}
+//		}
 
 	}
 	
@@ -175,18 +167,12 @@ species particle skills: [moving] {
 		draw circle(movement_radius, bounds.location) border: #black color: #transparent;
 		draw circle(comm_radius) color: #transparent border: #lightblue; 
 	}
-	 
-	action start_computing(int bid, particle auctioneer) {
-		return;
-	}
-	
-	int bid(int expected_time) {
-		return -1;
-	}
 
 	action rate(float res, particle connected) {
-		create rating_record number: 1 returns: record_list;
-		rating_record record <- record_list at 0;
+		rating_record record <- nil;
+		create rating_record {
+			record <- self;
+		}
 
 		if rating_db contains_key connected.name {
 			record <- rating_db[connected.name];

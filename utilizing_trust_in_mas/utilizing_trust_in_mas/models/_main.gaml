@@ -14,7 +14,7 @@ import 'uncooperative.gaml'
 import 'malicious.gaml'
 
 
-global {
+global {	
 	// Particle
 	int min_movement_radius <- 10;
 	int max_movement_radius <- 25;
@@ -45,12 +45,28 @@ global {
 	
 	// Uncooperative
 	
-	
 	// Charts data
 	float benign_rating <- 0.0;
 	float malicious_rating <- 0.0;
 	list<float> benign_global_ratings <- [];
 	list<float> malicious_global_rating <- [];
+	float avg_speedup <- 0.0;
+	
+	reflex set_speedup {
+		list<job> jobs <- job where (each != nil and each.end_time != 0);
+		list<float> speedups <- [];
+		loop j over: jobs {
+			float speedup <- 0.0;			
+			if (j.start_time = j.end_time) {
+				speedup <- j.estimated_sequential_processing_time;
+			} else {
+				speedup <- j.estimated_sequential_processing_time / (j.end_time - j.start_time);
+			}
+			add speedup at: 0 to: speedups;
+		}
+		
+		avg_speedup <- mean(speedups);
+	}
 
 	reflex charts_data when: every(4#cycles) {
 		// calculate the average global rating of benign agents
@@ -81,6 +97,8 @@ global {
 	}
 	
 	init {
+		seed <- 10.0;
+		
 		create benign number: 30;
 		create uncooperative number: 0;
 		create malicious number: 10;
@@ -136,5 +154,6 @@ experiment utilizing_trust type: gui {
 				data "malicious rating" value: malicious_rating color: #red;
 			}
 		}
+		monitor "Average speedup" value: avg_speedup;
 	}
 }
