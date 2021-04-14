@@ -32,6 +32,7 @@ species particle skills: [moving] {
 	
 	list<string> benign_particles <- nil;
 	list<string> malicious_particles <- nil;
+	int distance_treshold <- p_distance_treshold;
 	
 	list in_connection_radius -> (agents_at_distance(comm_radius)) of_generic_species particle;
 	list connected_particles -> in_connection_radius where (each.in_connection_radius contains self);
@@ -77,13 +78,13 @@ species particle skills: [moving] {
 		}
 	}
 	
-	// What if we do not meet any malicious? Still two clusters.
-	// If a few benign is acting very good ("positive outliers"), then it damages the others. 
-	reflex find_malicious when: every(p_classification_cycles#cycles) {
+	reflex classify when: every(p_classification_cycles#cycles) {
 		list<list> kmeans_init <- nil;
 		list<string> names <- nil;
+		list<point> points <- nil;
+		list<string> cluster_one_names <- nil;
+		list<string> cluster_two_names <- nil;
 		
-		int current_index <- 0;
 		loop record over: rating_db.values {
 			float local_mean <- mean(record.encounters.values);
 			float global_mean <- mean(record.global_ratings.values);
@@ -91,7 +92,7 @@ species particle skills: [moving] {
 			if (local_mean != 0.0 and global_mean != 0.0) {
 				add [local_mean, global_mean] to: kmeans_init;
 				add record.p.name to: names;
-				current_index <- current_index + 1;
+				add point(local_mean, global_mean) to: points;
 			}
 		}
 		
@@ -100,27 +101,54 @@ species particle skills: [moving] {
 		}
 		
 		list<list<int>> kmeans_result <- kmeans(kmeans_init, 2, p_kmeans_iterations);
-		benign_particles <- nil;
-		malicious_particles <- nil;
+		
+		list<point> cluster_one_points <- nil;
+		list<point> cluster_two_points <- nil;
 		
 		loop index over: kmeans_result[0] {
-			add rating_db[names[index]].p.name to: benign_particles;
+			add rating_db[names[index]].p.name to: cluster_one_names;
+			add points[index] to: cluster_one_points;
 		}
 		
 		loop index over: kmeans_result[1] {
-			add rating_db[names[index]].p.name to: malicious_particles;
+			add rating_db[names[index]].p.name to: cluster_two_names;
+			add points[index] to: cluster_two_points;
 		}
+		
+		point mean_cluster_one <- mean(cluster_one_points);
+		point mean_cluster_two <- mean(cluster_two_points);
+		
+		if distance_to(mean_cluster_one, mean_cluster_two) > distance_treshold {
+			if mean_cluster_one >= mean_cluster_two { // what if only one component of the point is higher?
+				benign_particles <- cluster_one_names;
+				malicious_particles <- cluster_two_names;
+			} else {
+				malicious_particles <- cluster_one_names;
+				benign_particles <- cluster_two_names;
+			}
+			
+		} else {
+			malicious_particles <- nil;
+			benign_particles <- cluster_one_names + cluster_two_names;
+		}
+		
+		cluster_one_names <- nil;
+		cluster_two_names <- nil;
 		 
 		if self.name = 'benign0' {
 			write "--------------------";
-			write "----- 'BENIGN' -----";
+			write "----- MEANS -----";
+			write "cluster 1: " + mean_cluster_one;
+			write "cluster 2: " + mean_cluster_two;
+			write "dist: " + distance_to(mean_cluster_one, mean_cluster_two);
+			write "----- BENIGN -----";
 			loop p over: benign_particles {
 				rating_record r <- rating_db[p];
 				write p;
 				write "-- " + mean(r.encounters.values);
 				write "-- " + mean(r.global_ratings.values);
 			}
-			write "----- 'MAL' --------";
+			write "----- MAL --------";
 			loop p over: malicious_particles {
 				rating_record r <- rating_db[p];
 				write p;
@@ -174,7 +202,7 @@ species particle skills: [moving] {
 		record.encounters[cycle] <- new_rating < 0 ? p_minimum_rating : new_rating;
 		record.local_rating <- mean(record.encounters.values);
 		
-		if (length(record.encounters) > maximum_encounter_length) {
+		if (length(record.encounters) > p_maximum_encounter_length) {
 			int min_key <- min(record.encounters.keys);
 			remove key: min_key from: record.encounters;
 		}

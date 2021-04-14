@@ -33,7 +33,8 @@ global {
 	int p_local_rating_w2 <- 5;
 	int p_local_rating_w3 <- 10;
 	float p_minimum_rating <- 0.1;
-	int maximum_encounter_length <- 100;
+	int p_maximum_encounter_length <- 100;
+	int p_distance_treshold <- 8;
 	
 	// Benign
 	float b_variance_factor <- 0.1;
@@ -111,7 +112,8 @@ experiment utilizing_trust type: gui {
  	parameter "Local rating W2" var: p_local_rating_w2 category: "Particle";
  	parameter "Local rating W3" var: p_local_rating_w3 category: "Particle";
  	parameter "Minimum rating gain for interaction" var: p_minimum_rating category: "Particle";
- 	parameter "Maximum length of encounter list" var: maximum_encounter_length category: "Particle";
+ 	parameter "Maximum length of encounter list" var: p_maximum_encounter_length category: "Particle";
+ 	parameter "Distance between clusters" var: p_distance_treshold category: "Particle";
  	
  	// Malicious
  	parameter "Lower bid factor" var: m_lower_bid_factor category: "Malicious";
