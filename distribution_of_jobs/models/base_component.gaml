@@ -1,26 +1,29 @@
 /**
-* Name: component
+* Name: basecomponent
 * Based on the internal empty template. 
 * Author: Jakob Dybdahl
 * Tags: 
 */
 
 
+model base_component
 
-model component
+import "particle.gaml"
+import "job.gaml"
 
-import 'my_agent.gaml'
-
-species component {
-	my_agent agent <- nil;
-	int processing_power <- 1;
+species base_component {
+	particle particle <- nil;
+	int processing_power <- 20;
 	list<work_unit> work_queue <- [];
 	
 	reflex do_work when: length(work_queue) > 0 {
 		// get the last one in queue (the oldest)
 		work_unit wu <- work_queue[length(work_queue)-1];
 		
-		do process_work_unit(wu, processing_power);
+		// ensure the work units i not worked on in the same cycle it is created
+		if (wu.start_time < cycle) {
+			do process_work_unit(wu, processing_power);
+		}
 	}
 	
 	action process_work_unit(work_unit wu, int power) {
@@ -34,9 +37,7 @@ species component {
 		if (processing_units_left <= 0) {
 			// inform requester about result 
 			ask wu.requester {
-				// TODO how to calculate result?
-				int result <- 1;
-				do receive_work_unit_result(myself, wu.id, result);
+				do receive_work_unit_result(myself, wu.id);
 			}
 			// remove work unit from queue
 			remove index: length(work_queue)-1 from: work_queue;	
