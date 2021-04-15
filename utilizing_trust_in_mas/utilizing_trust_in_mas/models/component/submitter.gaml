@@ -37,12 +37,13 @@ species submitter parent: base_component {
 		// -- calculate estimated sequential processing time (used to calculate speedup) --
 		// sum up existing work units in queue
 		loop wu over: work_queue {
-			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + ceil(wu.processing_units / processing_power);
+			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + wu.processing_units;
 		}
 		// sum up work units of job		
 		loop wu over: active_job.work_units {
-			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + ceil(wu.processing_units / processing_power);
+			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + wu.processing_units;
 		}
+		active_job.estimated_sequential_processing_time <- ceil(active_job.estimated_sequential_processing_time / processing_power);
 		// -----------
 		
 		write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
