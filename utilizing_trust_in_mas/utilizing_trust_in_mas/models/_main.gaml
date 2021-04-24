@@ -77,6 +77,12 @@ global {
 	reflex charts_data when: every(4#cycles) {
 		// calculate the average global rating of benign agents
 		list<float> benign_ratings;
+		
+		int true_positive <- 0; // Rightly classified benign.
+		int true_negative <- 0; // Right classificed malicious
+		int false_positive <- 0; // Wrongly classified benign
+		int false_negative <- 0; // Wrongly classified malicious False Negative
+				
 		loop b over: benign {
 			list<float> ratings;
 			loop p over: (list<particle>(benign + uncooperative + malicious) where (each.name != b.name)) { //  and each.rating_db[b.name].global_rating != 0
@@ -85,6 +91,28 @@ global {
  				}
 			}
 			add mean(ratings) to: benign_ratings;
+			
+			if(!empty(b.malicious_particles)) {
+				loop m over: b.malicious_particles {
+					if(first(m.name) = 'm' ) {
+						// Rightly classified
+						true_negative <- true_negative + 1;
+					} else {
+						// Wrongly classified
+						false_negative <- false_negative + 1;
+					}
+				}
+			}
+			
+			loop be over: b.benign_particles {
+				if(first(be.name) = 'b' ) {
+					// Rightly classified
+					true_positive <- true_positive + 1;
+				} else {
+					// Wrongly classified
+					false_positive <- false_positive + 1;
+				}
+			}
 		}
 		benign_rating <- mean(benign_ratings);
 		
@@ -98,16 +126,46 @@ global {
  				}
 			}
 			add mean(ratings) to: malicious_ratings;
+			
+			if(!empty(m.malicious_particles)) {
+				loop m over: m.malicious_particles {
+					if(first(m.name) = 'm' ) {
+						// Rightly classified
+						true_negative <- true_negative + 1;
+					} else {
+						// Wrongly classified
+						false_negative <- false_negative + 1;
+					}
+				}
+			}
+
+			
+			loop be over: m.benign_particles {
+				if(first(be.name) = 'b' ) {
+					// Rightly classified
+					true_positive <- true_positive + 1;
+				} else {
+					// Wrongly classified
+					false_positive <- false_positive + 1;
+				}
+			}
 		}
 		malicious_rating <- mean(malicious_ratings);
+		
+		write " ----------- ";
+		write "TP: " + true_positive;
+		write "FP: " + false_positive;
+		write "TN: " + true_negative;
+		write "FN: " + false_negative;
+		
 	}
 	
 	init {
 		seed <- 10.0;
 		
-		create benign number: 30;
+		create benign number: 15;
 		create uncooperative number: 0;
-		create malicious number: 10;
+		create malicious number: 15;
 	}
 }
 
