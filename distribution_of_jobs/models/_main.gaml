@@ -18,7 +18,7 @@ global {
 	list<job> slow_jobs <- [];
 	
 	init {
-		create my_agent number: 10;
+		create particle number: 10;
 		seed <- 10.0;
 	}
 	
@@ -57,7 +57,7 @@ experiment distributing_jobs type: gui {
 	output {
 		display main_display {
 			grid navigation_cell lines: #black;
-			species my_agent aspect: base;
+			species particle aspect: base;
 		}
 		
 		display chart_display {

@@ -20,7 +20,10 @@ species base_component {
 		// get the last one in queue (the oldest)
 		work_unit wu <- work_queue[length(work_queue)-1];
 		
-		do process_work_unit(wu, processing_power);
+		// ensure the work units i not worked on in the same cycle it is created
+		if (wu.start_time < cycle) {
+			do process_work_unit(wu, processing_power);
+		}
 	}
 	
 	action process_work_unit(work_unit wu, int power) {

@@ -30,7 +30,6 @@ species worker parent: base_component {
 	}
 	
 	action start_processing(work_unit wu) {
-		wu.start_time <- cycle;
 		add wu at: 0 to: work_queue;
 	}
 }
