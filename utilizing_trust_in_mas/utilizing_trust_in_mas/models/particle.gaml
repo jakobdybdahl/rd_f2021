@@ -179,11 +179,12 @@ species particle skills: [moving] {
 		} else {
 			record.p <- connected;
 		}
-		
+
 		// calculate new local rating
 		// new_rating = W1 * res + W2 * (e^(-curr_rating/W3)) where W1, W2 and W3 are configs
-		float new_rating <- (p_local_rating_w1 * res + p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
-		
+		 float new_rating <- (p_local_rating_w1 * res + 3 + p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
+//		float new_rating <- ((-(res^2) + 5) > 0 ? (-(res^2) + 5) : 0) + p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3);
+
 		// store encounter and increase total number of encounters
 		record.encounters[cycle] <- new_rating < 0 ? p_minimum_rating : new_rating;
 		record.local_rating <- mean(record.encounters.values);

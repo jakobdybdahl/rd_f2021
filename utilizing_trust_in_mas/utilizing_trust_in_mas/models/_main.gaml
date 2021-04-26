@@ -34,7 +34,7 @@ global {
 	int p_local_rating_w3 <- 10;
 	float p_minimum_rating <- 0.1;
 	int p_maximum_encounter_length <- 100;
-	int p_distance_treshold <- 8;
+	int p_distance_treshold <- 2;
 	
 	// Benign
 	float b_variance_factor <- 0.1;
@@ -128,8 +128,8 @@ global {
 			add mean(ratings) to: malicious_ratings;
 			
 			if(!empty(m.malicious_particles)) {
-				loop m over: m.malicious_particles {
-					if(first(m.name) = 'm' ) {
+				loop mp over: m.malicious_particles {
+					if(first(mp.name) = 'm' ) {
 						// Rightly classified
 						true_negative <- true_negative + 1;
 					} else {

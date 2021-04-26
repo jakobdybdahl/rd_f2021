@@ -46,7 +46,7 @@ species submitter parent: base_component {
 		active_job.estimated_sequential_processing_time <- ceil(active_job.estimated_sequential_processing_time / processing_power);
 		// -----------
 		
-		write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
+		// write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
 		
 		// map of connected workers <name::{declined,worker}>
 		list<worker> c_workers <- nil;
@@ -77,7 +77,7 @@ species submitter parent: base_component {
 					// request is accepted and better than previous
 					lowest_bidder <- (bid.value)::w.value;
 				} else if (bid.key = false) {
-					write 'declined: work unit #' + wus[wu_index].id + ' declined by ' + w.value.name;
+					// write 'declined: work unit #' + wus[wu_index].id + ' declined by ' + w.value.name;
 					workers[w.value.name] <- true::w.value;
 				}
 			}
@@ -87,14 +87,14 @@ species submitter parent: base_component {
 			 
 			if (lowest_bidder.value != nil) {
 				// some worker came with a better bid than our own
-				write self.particle.name + '/' + self.name + ': asking ' + lowest_bidder.value.particle.name + '/' + lowest_bidder.value.name + '(bid = ' + lowest_bidder.key + ') to process work unit #' + wus[wu_index].id + '(units = ' + wus[wu_index].processing_units + ')';
+				// write self.particle.name + '/' + self.name + ': asking ' + lowest_bidder.value.particle.name + '/' + lowest_bidder.value.name + '(bid = ' + lowest_bidder.key + ') to process work unit #' + wus[wu_index].id + '(units = ' + wus[wu_index].processing_units + ')';
 				ask lowest_bidder.value {
 					do start_processing(wus[wu_index]);
 				}
 				wu_index <- wu_index + 1;
 			} else {
 				// if own bid is better, add to own queue
-				write self.particle.name + '/' + self.name + ': adding work unit #' + wus[wu_index].id + ' (units = ' + wus[wu_index].processing_units + ') to own queue (bid = ' + own_bid + ')';
+				// write self.particle.name + '/' + self.name + ': adding work unit #' + wus[wu_index].id + ' (units = ' + wus[wu_index].processing_units + ') to own queue (bid = ' + own_bid + ')';
 				add wus[wu_index] at: 0 to: work_queue;
 				wu_index <- wu_index + 1;
 			}
@@ -102,7 +102,7 @@ species submitter parent: base_component {
 		
 		if (length(wus) - wu_index > 0) {
 			// there are more work units to process - add them to own queue
-			write self.name + ': adding ' + (length(wus) - wu_index) + ' to own queue';
+			// write self.name + ': adding ' + (length(wus) - wu_index) + ' to own queue';
 			loop i from: wu_index to: length(wus)-1 {
 				add wus[i] at: 0 to: work_queue;
 			}
@@ -119,7 +119,7 @@ species submitter parent: base_component {
 			// job done - there are no work units which has not been processed			
 			active_job.end_time <- cycle;
 			
-			write self.name + ': job done. Time = ' + (active_job.end_time - active_job.start_time) + '. Estimated = ' + active_job.estimated_sequential_processing_time;
+			// write self.name + ': job done. Time = ' + (active_job.end_time - active_job.start_time) + '. Estimated = ' + active_job.estimated_sequential_processing_time;
 			
 			// calculate result of job
 			loop wu over: active_job.work_units {
