@@ -46,7 +46,7 @@ species submitter parent: base_component {
 		active_job.estimated_sequential_processing_time <- ceil(active_job.estimated_sequential_processing_time / processing_power);
 		// -----------
 		
-		// write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
+		 write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
 		
 		// map of connected workers <name::{declined,worker}>
 		list<worker> c_workers <- nil;
@@ -107,6 +107,8 @@ species submitter parent: base_component {
 				add wus[i] at: 0 to: work_queue;
 			}
 		}
+		
+		active_job.work_units_processed_by_self <- active_job.work_units count (each.bidder.value = nil);
 	}
 	
 	action receive_work_unit_result(base_component from, int work_unit_id) {
@@ -123,7 +125,8 @@ species submitter parent: base_component {
 			
 			// calculate result of job
 			loop wu over: active_job.work_units {
-				if (wu.bidder.value != nil) {	
+				if (wu.bidder.value != nil) {
+					// work unit has been processed by other worker than our self, rate!	
 					float res <- float((wu.start_time + wu.bidder.key) - wu.end_time);
 					ask self.particle {
 						do rate(res, wu.bidder.value.particle);
