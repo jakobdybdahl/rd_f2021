@@ -32,6 +32,7 @@ global {
 	int p_local_rating_w1 <- 10;
 	int p_local_rating_w2 <- 5;
 	int p_local_rating_w3 <- 10;
+	int p_rating_gain <- 10;
 	float p_minimum_rating <- 0.1;
 	int p_maximum_encounter_length <- 100;
 	int p_distance_treshold <- 2;
@@ -52,6 +53,7 @@ global {
 	list<float> malicious_global_rating <- [];
 	float avg_speedup <- 0.0;
 	float avg_number_of_work_units_distributed <- 0.0;
+	float f1 <- 0.0;
 	
 	list<job> slow_jobs <- [];
 	
@@ -164,12 +166,17 @@ global {
 		}
 		malicious_rating <- mean(malicious_ratings);
 		
-		write " ----------- ";
-		write "TP: " + true_positive;
-		write "FP: " + false_positive;
-		write "TN: " + true_negative;
-		write "FN: " + false_negative;
+//		write " ----------- ";
+//		write "TP: " + true_positive;
+//		write "FP: " + false_positive;
+//		write "TN: " + true_negative;
+//		write "FN: " + false_negative;
 		
+		if( true_positive != 0 or false_positive != 0 or false_negative != 0) {
+			f1 <- true_positive / ( true_positive + 1/2 * (false_positive + false_negative));
+			// write "f1: " + f1;
+		}
+
 	}
 	
 	init {
@@ -234,5 +241,6 @@ experiment utilizing_trust type: gui {
 		monitor "Slow jobs" value: length(slow_jobs);
 		monitor "Number of jobs" value: length(job);
 		monitor "Aveage number of work units distributed" value: avg_number_of_work_units_distributed;
+		monitor "F1-score" value: f1;
 	}
 }

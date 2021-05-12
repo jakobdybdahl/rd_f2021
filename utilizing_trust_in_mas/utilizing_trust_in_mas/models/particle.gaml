@@ -127,27 +127,27 @@ species particle skills: [moving] {
 		cluster_one_names <- nil;
 		cluster_two_names <- nil;
 		 
-		if self.name = 'benign0' {
-			write "--------------------";
-			write "----- MEANS -----";
-			write "cluster 1: " + mean_cluster_one;
-			write "cluster 2: " + mean_cluster_two;
-			write "dist: " + distance_to(mean_cluster_one, mean_cluster_two);
-			write "----- BENIGN -----";
-			loop p over: benign_particles {
-				rating_record r <- rating_db[p.name];
-				write p;
-				write "-- " + mean(r.encounters.values);
-				write "-- " + mean(r.global_ratings.values);
-			}
-			write "----- MAL --------";
-			loop p over: malicious_particles {
-				rating_record r <- rating_db[p.name];
-				write p;
-				write "-- " + mean(r.encounters.values);
-				write "-- " + mean(r.global_ratings.values);
-			}
-		}
+//		if self.name = 'benign0' {
+//			write "--------------------";
+//			write "----- MEANS -----";
+//			write "cluster 1: " + mean_cluster_one;
+//			write "cluster 2: " + mean_cluster_two;
+//			write "dist: " + distance_to(mean_cluster_one, mean_cluster_two);
+//			write "----- BENIGN -----";
+//			loop p over: benign_particles {
+//				rating_record r <- rating_db[p.name];
+//				write p;
+//				write "-- " + mean(r.encounters.values);
+//				write "-- " + mean(r.global_ratings.values);
+//			}
+//			write "----- MAL --------";
+//			loop p over: malicious_particles {
+//				rating_record r <- rating_db[p.name];
+//				write p;
+//				write "-- " + mean(r.encounters.values);
+//				write "-- " + mean(r.global_ratings.values);
+//			}
+//		}
 
 	}
 	
@@ -179,14 +179,32 @@ species particle skills: [moving] {
 		} else {
 			record.p <- connected;
 		}
-
+				
 		// calculate new local rating
 		// new_rating = W1 * res + W2 * (e^(-curr_rating/W3)) where W1, W2 and W3 are configs
-		 float new_rating <- (p_local_rating_w1 * res + 3 + p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
-//		float new_rating <- ((-(res^2) + 5) > 0 ? (-(res^2) + 5) : 0) + p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3);
+//		 float new_rating <- (p_local_rating_w1 * res + 5 + p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
+		
+		float new_rating <- 0.0;
+		float rating_bonus <-  (p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
+		// If good result:
+		if(res >= 0) {
+			new_rating <- p_rating_gain + rating_bonus;
+		} else if(res > -1 and res < 0) {
+			// if okay-ish result:
+			new_rating <-  -p_local_rating_w1*res^2 + p_rating_gain + rating_bonus;
+		} else {
+			// if bad result
+			new_rating <- p_minimum_rating;
+		}
+		
+//		write "------------";
+//		write "res: " + res;
+//		write "rating bonus: " + (p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
+//		write "new rating: " + new_rating; 
 
+		
 		// store encounter and increase total number of encounters
-		record.encounters[cycle] <- new_rating < 0 ? p_minimum_rating : new_rating;
+		record.encounters[cycle] <- new_rating;
 		record.local_rating <- mean(record.encounters.values);
 		
 		if (length(record.encounters) > p_maximum_encounter_length) {
