@@ -51,11 +51,23 @@ global {
 	list<float> benign_global_ratings <- [];
 	list<float> malicious_global_rating <- [];
 	float avg_speedup <- 0.0;
+	float avg_number_of_work_units_distributed <- 0.0;
 	
 	list<job> slow_jobs <- [];
 	
 	reflex find_slow_jobs {
 		slow_jobs <- job where ((each.end_time != 0) and (each.estimated_sequential_processing_time < (each.end_time - each.start_time + each.acc_bid_diff)));
+	}
+	
+	reflex set_distribution_percentage {
+		list<job> jobs <- job where (each != nil and each.end_time != 0);
+		list<float> results <- [];
+		loop j over: jobs {
+			float res <- (length(j.work_units) * j.work_units_processed_by_self) / 100;
+			write res;
+			add res at: 0 to: results;
+		}
+		avg_number_of_work_units_distributed <- mean(results);
 	}
 	
 	reflex set_speedup {
@@ -212,14 +224,15 @@ experiment utilizing_trust type: gui {
 			species malicious aspect: base;
 		}
 		
-		display chart_display refresh: every(5#cycles) {
-			chart "Species evolution" type: series size: {1,0.5} position: {0, 0} {
-				data "benign rating" value: benign_rating color: #blue;
-				data "malicious rating" value: malicious_rating color: #red;
-			}
-		}
+//		display chart_display refresh: every(5#cycles) {
+//			chart "Species evolution" type: series size: {1,0.5} position: {0, 0} {
+//				data "benign rating" value: benign_rating color: #blue;
+//				data "malicious rating" value: malicious_rating color: #red;
+//			}
+//		}
 		monitor "Average speedup" value: avg_speedup;
 		monitor "Slow jobs" value: length(slow_jobs);
 		monitor "Number of jobs" value: length(job);
+		monitor "Aveage number of work units distributed" value: avg_number_of_work_units_distributed;
 	}
 }
