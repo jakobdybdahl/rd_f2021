@@ -16,10 +16,7 @@ import 'malicious.gaml'
 
 global {	
 	// Particle
-	int min_movement_radius <- 10;
-	int max_movement_radius <- 25;
-	int min_comm_radius <- 5;
-	int max_comm_radius <- 20;
+	int comm_radius <- 25;
 	
 	int p_broadcast_cycles <- 10;
 	int p_classification_cycles <- 10;
@@ -53,39 +50,30 @@ global {
 	list<float> malicious_global_rating <- [];
 	float avg_speedup <- 0.0;
 	float avg_number_of_work_units_distributed <- 0.0;
+	float avg_speedup_diff <- 0.0;
 	float f1 <- 0.0;
 	
 	list<job> slow_jobs <- [];
 	
-	reflex find_slow_jobs {
-		slow_jobs <- job where ((each.end_time != 0) and (each.estimated_sequential_processing_time < (each.end_time - each.start_time + each.acc_bid_diff)));
-	}
+//	reflex find_slow_jobs {
+//		// slow_jobs <- job where ((each.end_time != 0) and (each.estimated_sequential_processing_time < (each.end_time - each.start_time + each.acc_bid_diff)));
+//		slow_jobs <- job where ((each.end_time != 0) and (each.estimated_sequential_processing_time < (each.end_time - each.start_time)));
+//	}
 	
-	reflex set_distribution_percentage {
+	reflex set_distribution_percentage when: every (100#cycles) {
 		list<job> jobs <- job where (each != nil and each.end_time != 0);
 		list<float> results <- [];
 		loop j over: jobs {
 			float res <- (length(j.work_units) * j.work_units_processed_by_self) / 100;
-			write res;
 			add res at: 0 to: results;
 		}
-		avg_number_of_work_units_distributed <- mean(results);
+		avg_number_of_work_units_distributed <- 1 - mean(results);
 	}
 	
-	reflex set_speedup {
+	reflex set_speedup {	
 		list<job> jobs <- job where (each != nil and each.end_time != 0);
-		list<float> speedups <- [];
-		loop j over: jobs {
-			float speedup <- 0.0;			
-			if (j.start_time = j.end_time) {
-				speedup <- j.estimated_sequential_processing_time;
-			} else {
-				speedup <- j.estimated_sequential_processing_time / (j.end_time - j.start_time + j.acc_bid_diff);
-			}
-			add speedup at: 0 to: speedups;
-		}
-		
-		avg_speedup <- mean(speedups);
+		avg_speedup <- mean(jobs collect each.actual_speedup);
+		avg_speedup_diff <- mean(jobs collect abs(each.expected_speedup - each.actual_speedup));
 	}
 
 	reflex charts_data when: every(4#cycles) {
@@ -182,9 +170,9 @@ global {
 	init {
 		seed <- 10.0;
 		
-		create benign number: 15;
+		create benign number: 90;
 		create uncooperative number: 0;
-		create malicious number: 15;
+		create malicious number: 10;
 	}
 }
 
@@ -193,10 +181,7 @@ grid navigation_cell width: 10 height: 10 neighbors: 4 { }
 
 experiment utilizing_trust type: gui {
 	// Particle
- 	parameter "Minimum Movement Radius" var: min_movement_radius category: "Particle";
- 	parameter "Maximum Movement Radius" var: max_movement_radius category: "Particle";
- 	parameter "Minimum Communication Radius" var: min_comm_radius category: "Particle";
- 	parameter "Maximum Communication Radius" var: max_comm_radius category: "Particle";
+ 	parameter "Communication Radius" var: comm_radius category: "Particle";
  	
  	parameter "Number of cycles between broadcasts" var: p_broadcast_cycles category: "Particle";
  	parameter "Number of cycle between classification" var: p_classification_cycles category: "Particle";
@@ -224,12 +209,12 @@ experiment utilizing_trust type: gui {
  	parameter "Benign variance factor" var: b_variance_factor category: "Benign";
 	
 	output {
-		display main_display {
-			grid navigation_cell lines: #black;
-			species benign aspect: base;
-			species uncooperative aspect: base;
-			species malicious aspect: base;
-		}
+//		display main_display {
+//			grid navigation_cell lines: #black;
+//			species benign aspect: base;
+//			species uncooperative aspect: base;
+//			species malicious aspect: base;
+//		}
 		
 //		display chart_display refresh: every(5#cycles) {
 //			chart "Species evolution" type: series size: {1,0.5} position: {0, 0} {
@@ -238,9 +223,10 @@ experiment utilizing_trust type: gui {
 //			}
 //		}
 		monitor "Average speedup" value: avg_speedup;
+		monitor "Average speedup difference" value: avg_speedup_diff;
 		monitor "Slow jobs" value: length(slow_jobs);
 		monitor "Number of jobs" value: length(job);
-		monitor "Aveage number of work units distributed" value: avg_number_of_work_units_distributed;
+		monitor "Percentage of work units distributed" value: avg_number_of_work_units_distributed;
 		monitor "F1-score" value: f1;
 	}
 }

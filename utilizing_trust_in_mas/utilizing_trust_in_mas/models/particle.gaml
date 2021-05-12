@@ -17,9 +17,6 @@ import 'component/worker.gaml'
 
 species particle skills: [moving] {
 	navigation_cell my_cell <- one_of(navigation_cell);
-	int movement_radius <- rnd(min_movement_radius, max_movement_radius);
-	int comm_radius <- rnd(min_comm_radius, max_comm_radius);
-	geometry bounds <- circle(movement_radius, my_cell.location);
 	int broadcast_cycles <- p_broadcast_cycles;
 	
 	int computing_slots <- 1;
@@ -59,7 +56,7 @@ species particle skills: [moving] {
 	}
 	
 	reflex move {
-		do wander(1.0, 100.0, bounds);
+		do wander(1.0, 100.0);
 	}
 	
 	reflex broadcast when: every(p_broadcast_cycles#cycles) {
@@ -164,7 +161,6 @@ species particle skills: [moving] {
 	aspect base {
 		rgb pcolor <- (!empty(connected_particles)) ? connected_color : default_color;
 		draw circle(1) color: pcolor;
-		draw circle(movement_radius, bounds.location) border: #black color: #transparent;
 		draw circle(comm_radius) color: #transparent border: #lightblue; 
 	}
 

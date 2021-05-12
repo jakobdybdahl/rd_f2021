@@ -28,5 +28,7 @@ species job {
 	int acc_bid_diff <- 0;
 	float estimated_sequential_processing_time <- 0.0;
 	int work_units_processed_by_self <- 0;
+	float expected_speedup <- 0.0;
+	float actual_speedup <- 0.0;
 }
 

@@ -14,7 +14,8 @@ import "worker.gaml"
 species submitter parent: base_component {
 	job active_job <- nil;
 	
-	reflex do_job when: flip(0.05) and (submitter none_matches (each.active_job != nil)) {
+	 reflex do_job when: flip(0.05) and (submitter none_matches (each.active_job != nil)) {
+//	reflex do_job when: flip(0.05) and active_job = nil {
 		// create job
 		create job {
 			set start_time <- cycle;
@@ -28,6 +29,7 @@ species submitter parent: base_component {
 				set id <- i;
 				set start_time <- cycle;
 				set processing_units <- rnd(100,150);
+				
 				set initial_processing_units <- self.processing_units;
 				set requester <- myself;
 				add self at: i to: myself.active_job.work_units;
@@ -35,29 +37,28 @@ species submitter parent: base_component {
 		}
 		
 		// -- calculate estimated sequential processing time (used to calculate speedup) --
-		// sum up existing work units in queue
-		loop wu over: work_queue {
-			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + wu.processing_units;
-		}
-		// sum up work units of job		
-		loop wu over: active_job.work_units {
-			active_job.estimated_sequential_processing_time <- active_job.estimated_sequential_processing_time + wu.processing_units;
-		}
+		// sum up existing work units in queue and work units
+		active_job.estimated_sequential_processing_time <- 
+			float(sum(work_queue collect each.processing_units))
+			+ float(sum(active_job.work_units collect each.processing_units));
+
 		active_job.estimated_sequential_processing_time <- ceil(active_job.estimated_sequential_processing_time / processing_power);
 		// -----------
 		
 		 write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
 		
-		// map of connected workers <name::{declined,worker}>
+		
 		list<worker> c_workers <- nil;
-//		if empty(self.particle.benign_particles) or flip(exp(-cycle / 250)) {
-//			c_workers <- self.particle.connected_particles collect each.worker;	
-//		} else {
-//			c_workers <- (self.particle.connected_particles where (self.particle.benign_particles contains each)) collect each.worker;				
-//		}
+		if empty(self.particle.benign_particles) or flip(exp(-cycle / 250)) {
+			c_workers <- self.particle.connected_particles collect each.worker;	
+		} else {
+			c_workers <- (self.particle.connected_particles where (self.particle.benign_particles contains each)) collect each.worker;				
+		}
 		
-		c_workers <- self.particle.connected_particles collect each.worker;
-		
+//		c_workers <- self.particle.connected_particles collect each.worker;
+//		c_workers <- worker collect each;
+				
+		// map of connected workers <name::{declined,worker}>
 		map<string, pair<bool, worker>> workers <- c_workers as_map (each.name :: (false::each));
 		list<work_unit> wus <- active_job.work_units;
 		
@@ -135,10 +136,20 @@ species submitter parent: base_component {
 				}
 			}
 			
+			// set expected speedup
+			if (active_job.work_units one_matches (each.bidder.value != nil)) {
+				active_job.expected_speedup <- active_job.estimated_sequential_processing_time / max(active_job.work_units collect each.bidder.key);	
+			} else {
+				// if only done by our self expected speedup is 1.0
+				active_job.expected_speedup <- 1.0;
+			}
+			// set actual speedup
+			active_job.actual_speedup <- active_job.estimated_sequential_processing_time / (active_job.end_time - active_job.start_time);
+			
 			// clear active job and work units;
 			loop wu over: active_job.work_units {
 				ask wu {
-					 do die;
+//					 do die;
 				}
 			}
 			active_job <- nil; // active job is not 'killed' since the result should be saved.
