@@ -20,7 +20,7 @@ global {
 	
 	int p_broadcast_cycles <- 10;
 	int p_classification_cycles <- 10;
-	int p_kmeans_iterations <- 500;
+	int p_kmeans_iterations <- 50;
 	float p_auction_proba <- 0.2;
 	int p_lower_expected_time <- 10;
 	int p_upper_expected_time <- 10;
@@ -34,14 +34,16 @@ global {
 	int p_maximum_encounter_length <- 100;
 	int p_distance_treshold <- 2;
 	
+
+	
 	// Benign
 	float b_variance_factor <- 0.1;
-
+	int number_of_benign <- 90;
+	
 	// Malicious
 	float m_variance_factor <- 0.1;
 	float m_lower_bid_factor <- 0.7;
-	
-	// Uncooperative
+	int number_of_malicious <- 10;
 	
 	// Charts data
 	float benign_rating <- 0.0;
@@ -89,7 +91,7 @@ global {
 			list<float> ratings;
 			loop p over: (list<particle>(benign + uncooperative + malicious) where (each.name != b.name)) { //  and each.rating_db[b.name].global_rating != 0
  				if p.rating_db contains_key b.name {
- 					add p.rating_db[b.name].global_rating to: ratings; 					
+ 					add p.rating_db[b.name].neighbourhood_rating_mean to: ratings; 					
  				}
 			}
 			add mean(ratings) to: benign_ratings;
@@ -122,9 +124,9 @@ global {
 		list<float> malicious_ratings;
 		loop m over: malicious {
 			list<float> ratings;
-			loop p over: (list<particle>(benign + uncooperative + malicious) where (each.name != m.name)) { //  and each.rating_db[b.name].global_rating != 0
+			loop p over: (list<particle>(benign + uncooperative + malicious) where (each.name != m.name)) { 
  				if p.rating_db contains_key m.name {
- 					add p.rating_db[m.name].global_rating to: ratings; 					
+ 					add p.rating_db[m.name].neighbourhood_rating_mean to: ratings; 					
  				}
 			}
 			add mean(ratings) to: malicious_ratings;
@@ -154,15 +156,14 @@ global {
 		}
 		malicious_rating <- mean(malicious_ratings);
 		
-//		write " ----------- ";
-//		write "TP: " + true_positive;
-//		write "FP: " + false_positive;
-//		write "TN: " + true_negative;
-//		write "FN: " + false_negative;
+		write " ----------- ";
+		write "TP: " + true_positive;
+		write "FP: " + false_positive;
+		write "TN: " + true_negative;
+		write "FN: " + false_negative;
 		
 		if( true_positive != 0 or false_positive != 0 or false_negative != 0) {
-			f1 <- true_positive / ( true_positive + 1/2 * (false_positive + false_negative));
-			// write "f1: " + f1;
+			f1 <- true_positive / ( true_positive + 1/2 * (false_positive + false_negative));			
 		}
 
 	}
@@ -170,9 +171,8 @@ global {
 	init {
 		seed <- 10.0;
 		
-		create benign number: 90;
-		create uncooperative number: 0;
-		create malicious number: 10;
+		create benign number: number_of_benign;
+		create malicious number: number_of_malicious;
 	}
 }
 
@@ -208,6 +208,10 @@ experiment utilizing_trust type: gui {
  	// Benign
  	parameter "Benign variance factor" var: b_variance_factor category: "Benign";
 	
+	init {
+		create simulation with:[number_of_malicious::50];
+	}
+	
 	output {
 //		display main_display {
 //			grid navigation_cell lines: #black;
@@ -216,12 +220,18 @@ experiment utilizing_trust type: gui {
 //			species malicious aspect: base;
 //		}
 		
-//		display chart_display refresh: every(5#cycles) {
-//			chart "Species evolution" type: series size: {1,0.5} position: {0, 0} {
-//				data "benign rating" value: benign_rating color: #blue;
-//				data "malicious rating" value: malicious_rating color: #red;
-//			}
-//		}
+		display rating_chart_display refresh: every(5#cycles) {
+			chart "Rating" type: series size: {1,0.5} position: {0, 0} {
+				data "benign rating" value: benign_rating color: #blue;
+				data "malicious rating" value: malicious_rating color: #red;
+				data "malicious rating 2" value: simulations[0].malicious_rating color: #green;
+			}
+			
+			chart "F1" type: series size: {1,0.5} position: {0, 50} {
+				data "F1" value: f1 color: #blue;
+			}
+		}
+
 		monitor "Average speedup" value: avg_speedup;
 		monitor "Average speedup difference" value: avg_speedup_diff;
 		monitor "Slow jobs" value: length(slow_jobs);

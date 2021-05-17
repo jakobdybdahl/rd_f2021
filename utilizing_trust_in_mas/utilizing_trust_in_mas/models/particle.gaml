@@ -62,7 +62,7 @@ species particle skills: [moving] {
 	reflex broadcast when: every(p_broadcast_cycles#cycles) {
 		loop connected over: connected_particles {
 			ask connected {
-				do receive(myself.rating_db where (each.local_rating != 0), myself);
+				do receive(myself.rating_db where (each.local_rating_mean != 0), myself);
 			}
 		}
 	}
@@ -75,13 +75,13 @@ species particle skills: [moving] {
 		list<particle> cluster_two_names <- nil;
 		
 		loop record over: rating_db.values {
-			float local_mean <- mean(record.encounters.values);
-			float global_mean <- mean(record.global_ratings.values);
+			float local_mean <- record.local_rating_mean;
+			float neighbourhood_mean <- record.neighbourhood_rating_mean;
 			
-			if (local_mean != 0.0 and global_mean != 0.0) {
-				add [local_mean, global_mean] to: kmeans_init;
+			if (local_mean != 0.0 and neighbourhood_mean != 0.0) {
+				add [local_mean, neighbourhood_mean] to: kmeans_init;
 				add record.p to: particles;
-				add point(local_mean, global_mean) to: points;
+				add point(local_mean, neighbourhood_mean) to: points;
 			}
 		}
 		
@@ -108,7 +108,7 @@ species particle skills: [moving] {
 		point mean_cluster_two <- mean(cluster_two_points);
 		
 		if distance_to(mean_cluster_one, mean_cluster_two) > distance_treshold {
-			if mean_cluster_one >= mean_cluster_two { // what if only one component of the point is higher?
+			if mean_cluster_one >= mean_cluster_two { 
 				benign_particles <- cluster_one_names;
 				malicious_particles <- cluster_two_names;
 			} else {
@@ -176,12 +176,9 @@ species particle skills: [moving] {
 			record.p <- connected;
 		}
 				
-		// calculate new local rating
-		// new_rating = W1 * res + W2 * (e^(-curr_rating/W3)) where W1, W2 and W3 are configs
-//		 float new_rating <- (p_local_rating_w1 * res + 5 + p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
-		
+		// calculate new local rating;
 		float new_rating <- 0.0;
-		float rating_bonus <-  (p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
+		float rating_bonus <-  (p_local_rating_w2 * exp(-record.local_rating_mean/p_local_rating_w3));
 		// If good result:
 		if(res >= 0) {
 			new_rating <- p_rating_gain + rating_bonus;
@@ -193,15 +190,8 @@ species particle skills: [moving] {
 			new_rating <- p_minimum_rating;
 		}
 		
-//		write "------------";
-//		write "res: " + res;
-//		write "rating bonus: " + (p_local_rating_w2 * exp(-record.local_rating/p_local_rating_w3));
-//		write "new rating: " + new_rating; 
-
-		
 		// store encounter and increase total number of encounters
 		record.encounters[cycle] <- new_rating;
-		record.local_rating <- mean(record.encounters.values);
 		
 		if (length(record.encounters) > p_maximum_encounter_length) {
 			int min_key <- min(record.encounters.keys);
@@ -209,16 +199,21 @@ species particle skills: [moving] {
 		}
 		
 		record.nEncounters <- record.nEncounters + 1;
-	
+		record.local_rating_mean <- mean(record.encounters.values);
+		
 		put record at: record.p.name in: rating_db;
 	}
 	
 	action receive(list<rating_record> db, particle from) {
-		// TODO: Check if rating_db contains key
-		// rating_db[from.name].latestEncounter <- cycle;
+		if (rating_db contains_key from.name) {
+			rating_db[from.name].latestEncounter <- cycle;
+		}
+
 		loop receiving_record over: db {
-			create rating_record number: 1 returns: record_list;
-			rating_record record <- record_list at 0;
+			rating_record record <- nil;
+			create rating_record {
+				record <- self;
+			}
 			
 			if (rating_db contains_key receiving_record.p.name) {
 				record <- rating_db[receiving_record.p.name];
@@ -226,9 +221,9 @@ species particle skills: [moving] {
 				record.p <- receiving_record.p;
 			}
 			
-			record.global_ratings[from.name] <- mean(receiving_record.encounters.values);
-			record.global_rating <- mean(record.global_ratings.values);
-						
+			record.neighbourhood_ratings[from.name] <- mean(receiving_record.encounters.values);
+			record.neighbourhood_rating_mean <- mean(record.neighbourhood_ratings);
+			
 			put record at: record.p.name in: rating_db;
 		}
 	}

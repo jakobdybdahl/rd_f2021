@@ -45,7 +45,7 @@ species submitter parent: base_component {
 		active_job.estimated_sequential_processing_time <- ceil(active_job.estimated_sequential_processing_time / processing_power);
 		// -----------
 		
-		 write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
+		 // write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
 		
 		
 		list<worker> c_workers <- nil;
@@ -116,7 +116,7 @@ species submitter parent: base_component {
 		active_job.work_units[work_unit_id].has_been_processed <- true;
 		active_job.work_units[work_unit_id].end_time <- cycle;
 		
-		write self.name + ': received work unit result for #' + work_unit_id + '. Bid = ' + active_job.work_units[work_unit_id].bidder.key + ', result = ' + (active_job.work_units[work_unit_id].end_time - active_job.work_units[work_unit_id].start_time);
+		// write self.name + ': received work unit result for #' + work_unit_id + '. Bid = ' + active_job.work_units[work_unit_id].bidder.key + ', result = ' + (active_job.work_units[work_unit_id].end_time - active_job.work_units[work_unit_id].start_time);
 		
 		if (empty(active_job.work_units where (each.has_been_processed = false))) {
 			// job done - there are no work units which has not been processed			
@@ -144,7 +144,8 @@ species submitter parent: base_component {
 				active_job.expected_speedup <- 1.0;
 			}
 			// set actual speedup
-			active_job.actual_speedup <- active_job.estimated_sequential_processing_time / (active_job.end_time - active_job.start_time);
+			// acc_bid_diff is to offset a malicious bid by the amount it was slower than expected.
+			active_job.actual_speedup <- active_job.estimated_sequential_processing_time / ((active_job.end_time - active_job.start_time) + active_job.acc_bid_diff);
 			
 			// clear active job and work units;
 			loop wu over: active_job.work_units {
