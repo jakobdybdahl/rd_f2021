@@ -50,7 +50,11 @@ species submitter parent: base_component {
 		
 		list<worker> c_workers <- nil;
 		if empty(self.particle.benign_particles) or flip(exp(-cycle / 250)) {
-			c_workers <- self.particle.connected_particles collect each.worker;	
+			c_workers <- self.particle.connected_particles where !(self.particle.rating_db contains_key each.name) collect each.worker;
+			
+			if(length(c_workers) = 0) {
+				c_workers <- self.particle.connected_particles collect each.worker;	
+			}	
 		} else {
 			c_workers <- (self.particle.connected_particles where (self.particle.benign_particles contains each)) collect each.worker;				
 		}

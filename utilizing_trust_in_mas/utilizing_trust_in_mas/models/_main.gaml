@@ -231,7 +231,7 @@ experiment utilizing_trust type: gui {
 				data "F1" value: f1 color: #blue;
 			}
 		}
-
+		
 		monitor "Average speedup" value: avg_speedup;
 		monitor "Average speedup difference" value: avg_speedup_diff;
 		monitor "Slow jobs" value: length(slow_jobs);
