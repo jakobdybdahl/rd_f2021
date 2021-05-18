@@ -16,7 +16,7 @@ import 'malicious.gaml'
 
 global {	
 	// Particle
-	int comm_radius <- 25;
+	int comm_radius <- 35;
 	
 	int p_broadcast_cycles <- 10;
 	int p_classification_cycles <- 10;
@@ -239,4 +239,42 @@ experiment utilizing_trust type: gui {
 		monitor "Percentage of work units distributed" value: avg_number_of_work_units_distributed;
 		monitor "F1-score" value: f1;
 	}
+}
+
+experiment multiple_simulations type: gui {
+	parameter 'Number of benigns' var: number_of_benign init: 30 category: 'Environment and Population';
+	parameter 'Number of malicious' var: number_of_malicious init: 0 category: "Environment and Population";
+	
+	
+	init {
+		create _main_model with: [number_of_benign::30, number_of_malicious::6];
+		create _main_model with: [number_of_benign::30, number_of_malicious::12];
+		create _main_model with: [number_of_benign::30, number_of_malicious::20];
+	}
+	
+	permanent {
+		display Comparison background: #white {
+			chart "Speedup" type: series {
+				loop s over: simulations {
+					data "Speedup " + int(s) value: s.avg_speedup color: s.color marker: false style: line thickness: 5;
+				}
+			}
+		}
+	}
+	
+//	output {
+//		layout #split editors: false consoles: false tabs: false tray: false navigator: false;
+//		display "Test" refresh: every(5#cycles) {
+////			chart "Rating " + int(simulation) + ": (" + number_of_benign + "/" + number_of_malicious + ")" type: series size: {1,0.5} position: {0, 0} {
+////				data "benign rating" value: benign_rating color: #blue;
+////				data "malicious rating" value: malicious_rating color: #red;
+////			}
+////			chart "F1" type: series size: {1,0.5} position: {0, 50} {
+////				data "F1" value: f1 color: #blue;
+////			}
+//			chart "Speedup" + ": (" + number_of_benign + "/" + number_of_malicious + ")" type: series {
+//				data "Average speedup " + int(simulation) value: avg_speedup;
+//			}
+//		}
+//	}
 }
