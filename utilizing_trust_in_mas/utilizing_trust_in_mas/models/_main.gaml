@@ -35,7 +35,7 @@ global {
 	// Particles
 	int comm_radius <- 25;
 	int number_of_particles <- 100;
-	float fraction_of_malicious <- 0.0;
+	float fraction_of_malicious <- 0.2;
 	
 	// Charts data
 	float benign_rating <- 0.0;
@@ -43,16 +43,19 @@ global {
 	float avg_speedup <- 0.0;
 	float avg_number_of_work_units_distributed <- 0.0;
 	float avg_speedup_diff <- 0.0;
+	float estimated_maliciousness <- 0.0;
 	float f1 <- 0.0;
 	
 	list<job> slow_jobs <- [];
+	
+	string filename <- '';
 	
 //	reflex find_slow_jobs {
 //		// slow_jobs <- job where ((each.end_time != 0) and (each.estimated_sequential_processing_time < (each.end_time - each.start_time + each.acc_bid_diff)));
 //		slow_jobs <- job where ((each.end_time != 0) and (each.estimated_sequential_processing_time < (each.end_time - each.start_time)));
 //	}
 	
-	reflex set_distribution_percentage when: every (100#cycles) {
+	reflex set_distribution_percentage  {
 		list<job> jobs <- job where (each != nil and each.end_time != 0);
 		list<float> results <- [];
 		loop j over: jobs {
@@ -66,9 +69,10 @@ global {
 		list<job> jobs <- job where (each != nil and each.end_time != 0);
 		avg_speedup <- mean(jobs collect each.actual_speedup);
 		avg_speedup_diff <- mean(jobs collect abs(each.expected_speedup - each.actual_speedup));
+		estimated_maliciousness <-  mean(jobs collect (each.actual_speedup / each.expected_speedup)); // only for malicious
 	}
 	
-	reflex charts_data when: every(4#cycles) {
+	reflex charts_data  {
 		// calculate the average global rating of benign agents
 		list<float> benign_ratings;
 		
@@ -157,14 +161,12 @@ global {
 		}
 
 	}
-	
+//	
 	reflex save {
-		save [cycle, malicious_rating, benign_rating, f1, avg_speedup]  to: "malicious_" + int(fraction_of_malicious * 100) + ".csv" type: "csv" rewrite: false;
+		save [cycle, malicious_rating, benign_rating, f1, avg_speedup, avg_number_of_work_units_distributed]  to: "data/" + filename + ".csv" type: "csv" rewrite: false;
 	}
 	
 	init {
-		seed <- 10.0;
-		
 		create benign number: number_of_particles * (1 - fraction_of_malicious);
 		create malicious number: number_of_particles * fraction_of_malicious;
 	}
@@ -173,13 +175,12 @@ global {
 
 grid navigation_cell width: 10 height: 10 neighbors: 4 { }
 
-experiment Batch type: batch repeat: 1 keep_seed: true until: cycle = 500 {
-    parameter 'Number of malicious:' var: fraction_of_malicious among: [ 0.0, 0.10, 0.20, 0.30, 0.40 ];
-
-	reflex save {
-		save [cycle, (simulations mean_of each.malicious_rating), (simulations mean_of each.benign_rating)]  to: "save_data.csv" type: "csv" rewrite: false;
+experiment "Number of Malicious" type: batch repeat: 10 until: cycle = 1000 {
+    parameter 'Number of malicious:' var: fraction_of_malicious among: [ 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ];
+	
+	init {
+		filename <- "malicious_" + int(fraction_of_malicious * 100);
 	}
-
 }
 
 experiment utilizing_trust type: gui {
@@ -200,9 +201,9 @@ experiment utilizing_trust type: gui {
  	parameter "Maximum length of encounter list" var: p_maximum_encounter_length category: "Particle";
  	parameter "Distance between clusters" var: p_distance_treshold category: "Particle";
  	
-	reflex savedata {
-		save [cycle, malicious_rating, benign_rating]  to: "save_data.csv" type: "csv" rewrite: false;
-	}
+//	reflex savedata {
+//		save [cycle, malicious_rating, benign_rating]  to: "save_data.csv" type: "csv" rewrite: false;
+//	}
 	
 	output {
 //		display main_display {
@@ -229,6 +230,7 @@ experiment utilizing_trust type: gui {
 		monitor "Number of jobs" value: length(job);
 		monitor "Percentage of work units distributed" value: avg_number_of_work_units_distributed;
 		monitor "F1-score" value: f1;
+		monitor "Malciousness" value: estimated_maliciousness;
 	}
 }
 
