@@ -30,7 +30,7 @@ global {
 	int p_local_rating_w2 <- 5;
 	int p_local_rating_w3 <- 10;
 	int p_rating_gain <- 10;
-	float p_minimum_rating <- 0.1;
+	float p_minimum_rating <- 0.5;
 	int p_maximum_encounter_length <- 100;
 	int p_distance_treshold <- 2;
 	
@@ -38,7 +38,7 @@ global {
 	
 	// Benign
 	float b_variance_factor <- 0.1;
-	int number_of_benign <- 90;
+	int number_of_benign <- 100;
 	
 	// Malicious
 	float m_variance_factor <- 0.1;
@@ -77,7 +77,7 @@ global {
 		avg_speedup <- mean(jobs collect each.actual_speedup);
 		avg_speedup_diff <- mean(jobs collect abs(each.expected_speedup - each.actual_speedup));
 	}
-
+	
 	reflex charts_data when: every(4#cycles) {
 		// calculate the average global rating of benign agents
 		list<float> benign_ratings;
@@ -168,6 +168,10 @@ global {
 
 	}
 	
+	reflex save {
+		save [cycle, (malicious_rating), (benign_rating), f1, avg_speedup]  to: "malicious_" + number_of_malicious + ".csv" type: "csv" rewrite: false;
+	}
+	
 	init {
 		seed <- 10.0;
 		
@@ -178,6 +182,15 @@ global {
 
 
 grid navigation_cell width: 10 height: 10 neighbors: 4 { }
+
+experiment Batch type: batch repeat: 1 keep_seed: true until: cycle = 500 {
+    parameter 'Number of malicious:' var: number_of_malicious among: [ 0, 10, 20, 30, 40 ];
+
+//	action _step_ {
+//		save [cycle, (simulations mean_of each.malicious_rating), (simulations mean_of each.benign_rating)]  to: "save_data.csv" type: "csv" rewrite: false;
+//	}
+
+}
 
 experiment utilizing_trust type: gui {
 	// Particle
@@ -207,9 +220,17 @@ experiment utilizing_trust type: gui {
  	
  	// Benign
  	parameter "Benign variance factor" var: b_variance_factor category: "Benign";
-	
+ 		
 	init {
-		create simulation with:[number_of_malicious::50];
+//		create simulation with:[number_of_malicious::10];
+//		create simulation with:[number_of_malicious::20];
+//		create simulation with:[number_of_malicious::30];
+//		create simulation with:[number_of_malicious::40];
+//		create simulation with:[number_of_malicious::50];
+	}
+	
+	reflex savedata {
+		save [cycle, malicious_rating, benign_rating]  to: "save_data.csv" type: "csv" rewrite: false;
 	}
 	
 	output {
@@ -224,7 +245,11 @@ experiment utilizing_trust type: gui {
 			chart "Rating" type: series size: {1,0.5} position: {0, 0} {
 				data "benign rating" value: benign_rating color: #blue;
 				data "malicious rating" value: malicious_rating color: #red;
-				data "malicious rating 2" value: simulations[0].malicious_rating color: #green;
+				data "malicious rating 10" value: simulations[0].malicious_rating color: #green;
+//				data "malicious rating 20" value: simulations[1].malicious_rating color: #green;
+//				data "malicious rating 30" value: simulations[2].malicious_rating color: #green;
+//				data "malicious rating 40" value: simulations[3].malicious_rating color: #green;
+//				data "malicious rating 50" value: simulations[4].malicious_rating color: #green;
 			}
 			
 			chart "F1" type: series size: {1,0.5} position: {0, 50} {
