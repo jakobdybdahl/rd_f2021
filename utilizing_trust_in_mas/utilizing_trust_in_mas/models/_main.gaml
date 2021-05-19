@@ -15,41 +15,31 @@ import 'malicious.gaml'
 
 
 global {	
-	// Particle
-	int comm_radius <- 25;
-	
 	int p_broadcast_cycles <- 10;
-	int p_classification_cycles <- 10;
-	int p_kmeans_iterations <- 50;
-	float p_auction_proba <- 0.2;
-	int p_lower_expected_time <- 10;
-	int p_upper_expected_time <- 10;
 	int p_decrease_rating_cycle <- 20;
 	float p_decreasing_factor <- 0.99;
+	int p_maximum_encounter_length <- 100;
+	
+	// rating
+	int p_rating_gain <- 10;
 	int p_local_rating_w1 <- 10;
 	int p_local_rating_w2 <- 5;
 	int p_local_rating_w3 <- 10;
-	int p_rating_gain <- 10;
 	float p_minimum_rating <- 0.5;
-	int p_maximum_encounter_length <- 100;
+	
+	// classfification
+	int p_classification_cycles <- 10;
+	int p_kmeans_iterations <- 50;
 	int p_distance_treshold <- 2;
-	
-
-	
-	// Benign
-	float b_variance_factor <- 0.1;
-	int number_of_benign <- 100;
-	
-	// Malicious
-	float m_variance_factor <- 0.1;
-	float m_lower_bid_factor <- 0.7;
-	int number_of_malicious <- 10;
+		
+	// Particles
+	int comm_radius <- 25;
+	int number_of_particles <- 100;
+	float fraction_of_malicious <- 0.0;
 	
 	// Charts data
 	float benign_rating <- 0.0;
 	float malicious_rating <- 0.0;
-	list<float> benign_global_ratings <- [];
-	list<float> malicious_global_rating <- [];
 	float avg_speedup <- 0.0;
 	float avg_number_of_work_units_distributed <- 0.0;
 	float avg_speedup_diff <- 0.0;
@@ -156,11 +146,11 @@ global {
 		}
 		malicious_rating <- mean(malicious_ratings);
 		
-		write " ----------- ";
-		write "TP: " + true_positive;
-		write "FP: " + false_positive;
-		write "TN: " + true_negative;
-		write "FN: " + false_negative;
+//		write " ----------- ";
+//		write "TP: " + true_positive;
+//		write "FP: " + false_positive;
+//		write "TN: " + true_negative;
+//		write "FN: " + false_negative;
 		
 		if( true_positive != 0 or false_positive != 0 or false_negative != 0) {
 			f1 <- true_positive / ( true_positive + 1/2 * (false_positive + false_negative));			
@@ -169,14 +159,14 @@ global {
 	}
 	
 	reflex save {
-		save [cycle, (malicious_rating), (benign_rating), f1, avg_speedup]  to: "malicious_" + number_of_malicious + ".csv" type: "csv" rewrite: false;
+		save [cycle, malicious_rating, benign_rating, f1, avg_speedup]  to: "malicious_" + int(fraction_of_malicious * 100) + ".csv" type: "csv" rewrite: false;
 	}
 	
 	init {
 		seed <- 10.0;
 		
-		create benign number: number_of_benign;
-		create malicious number: number_of_malicious;
+		create benign number: number_of_particles * (1 - fraction_of_malicious);
+		create malicious number: number_of_particles * fraction_of_malicious;
 	}
 }
 
@@ -184,11 +174,11 @@ global {
 grid navigation_cell width: 10 height: 10 neighbors: 4 { }
 
 experiment Batch type: batch repeat: 1 keep_seed: true until: cycle = 500 {
-    parameter 'Number of malicious:' var: number_of_malicious among: [ 0, 10, 20, 30, 40 ];
+    parameter 'Number of malicious:' var: fraction_of_malicious among: [ 0.0, 0.10, 0.20, 0.30, 0.40 ];
 
-//	action _step_ {
-//		save [cycle, (simulations mean_of each.malicious_rating), (simulations mean_of each.benign_rating)]  to: "save_data.csv" type: "csv" rewrite: false;
-//	}
+	reflex save {
+		save [cycle, (simulations mean_of each.malicious_rating), (simulations mean_of each.benign_rating)]  to: "save_data.csv" type: "csv" rewrite: false;
+	}
 
 }
 
@@ -203,10 +193,6 @@ experiment utilizing_trust type: gui {
  	parameter "Number of iterations in kmeans" var: p_kmeans_iterations category: "Particle";
  	parameter "Decreasing factor" var: p_decreasing_factor category: "Particle";
  	
- 	parameter "Probability for holding an auction" var: p_auction_proba category: "Particle";
- 	parameter "Lower bound for expectected time for auction item" var: p_lower_expected_time category: "Particle";
- 	parameter "Upper bound for expectected time for auction item" var: p_upper_expected_time category: "Particle";
- 	
  	parameter "Local rating W1" var: p_local_rating_w1 category: "Particle";
  	parameter "Local rating W2" var: p_local_rating_w2 category: "Particle";
  	parameter "Local rating W3" var: p_local_rating_w3 category: "Particle";
@@ -214,21 +200,6 @@ experiment utilizing_trust type: gui {
  	parameter "Maximum length of encounter list" var: p_maximum_encounter_length category: "Particle";
  	parameter "Distance between clusters" var: p_distance_treshold category: "Particle";
  	
- 	// Malicious
- 	parameter "Lower bid factor" var: m_lower_bid_factor category: "Malicious";
- 	parameter "Malicious variance factor" var: m_variance_factor category: "Malicious";
- 	
- 	// Benign
- 	parameter "Benign variance factor" var: b_variance_factor category: "Benign";
- 		
-	init {
-//		create simulation with:[number_of_malicious::10];
-//		create simulation with:[number_of_malicious::20];
-//		create simulation with:[number_of_malicious::30];
-//		create simulation with:[number_of_malicious::40];
-//		create simulation with:[number_of_malicious::50];
-	}
-	
 	reflex savedata {
 		save [cycle, malicious_rating, benign_rating]  to: "save_data.csv" type: "csv" rewrite: false;
 	}
@@ -245,11 +216,6 @@ experiment utilizing_trust type: gui {
 			chart "Rating" type: series size: {1,0.5} position: {0, 0} {
 				data "benign rating" value: benign_rating color: #blue;
 				data "malicious rating" value: malicious_rating color: #red;
-				data "malicious rating 10" value: simulations[0].malicious_rating color: #green;
-//				data "malicious rating 20" value: simulations[1].malicious_rating color: #green;
-//				data "malicious rating 30" value: simulations[2].malicious_rating color: #green;
-//				data "malicious rating 40" value: simulations[3].malicious_rating color: #green;
-//				data "malicious rating 50" value: simulations[4].malicious_rating color: #green;
 			}
 			
 			chart "F1" type: series size: {1,0.5} position: {0, 50} {
