@@ -29,3 +29,5 @@ release/*
 /*/bin/
 msi.gama.ext/lib/
 .__*
+
+*.csv
