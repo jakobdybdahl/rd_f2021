@@ -36,6 +36,7 @@ global {
 	int comm_radius <- 25;
 	int number_of_particles <- 100;
 	float fraction_of_malicious <- 0.2;
+	float malicious_factor <- 0.5;
 	
 	// Charts data
 	float benign_rating <- 0.0;
@@ -163,7 +164,7 @@ global {
 	}
 //	
 	reflex save {
-		save [cycle, malicious_rating, benign_rating, f1, avg_speedup, avg_number_of_work_units_distributed]  to: "data/" + filename + ".csv" type: "csv" rewrite: false;
+		save [cycle, malicious_rating, benign_rating, f1, avg_speedup, avg_number_of_work_units_distributed]  to: "data/" + "malicious_factor_" + int(malicious_factor * 100) + ".csv" type: "csv" rewrite: false;
 	}
 	
 	init {
@@ -176,11 +177,11 @@ global {
 grid navigation_cell width: 10 height: 10 neighbors: 4 { }
 
 experiment "Number of Malicious" type: batch repeat: 10 until: cycle = 1000 {
-    parameter 'Number of malicious:' var: fraction_of_malicious among: [ 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ];
+    // parameter 'Number of malicious:' var: malicious_factor among: [ 1.0 ];
 	
-	init {
-		filename <- "malicious_" + int(fraction_of_malicious * 100);
-	}
+//	init {
+//		filename <- "malicious_" + int(fraction_of_malicious * 100);
+//	}
 }
 
 experiment utilizing_trust type: gui {

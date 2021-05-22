@@ -15,6 +15,6 @@ species malicious parent: particle {
 	rgb default_color <- #red;
 	
 	init {
-		self.worker.malicious_factor <- 0.5;
+		self.worker.malicious_factor <- malicious_factor;
 	}
 }
