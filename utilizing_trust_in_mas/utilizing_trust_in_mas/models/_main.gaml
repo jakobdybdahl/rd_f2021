@@ -35,7 +35,7 @@ global {
 	// Particles
 	int comm_radius <- 25;
 	int number_of_particles <- 50;
-	float fraction_of_malicious <- 0.2;
+	float fraction_of_malicious <- 0.7;
 	float malicious_factor <- 0.5;
 	
 	// Charts data

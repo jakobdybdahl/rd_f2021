@@ -129,26 +129,26 @@ species particle skills: [moving] {
 		cluster_two_names <- nil;
 		 
 //		if self.name = 'benign0' {
-			write "--------------------";
-			write "------ " + self.name + " ------";
-			write "----- MEANS -----";
-			write "cluster 1: " + mean_cluster_one;
-			write "cluster 2: " + mean_cluster_two;
-			write "dist: " + distance_to(mean_cluster_one, mean_cluster_two);
-			write "----- BENIGN -----";
-			loop p over: benign_particles {
-				rating_record r <- rating_db[p.name];
-				write p;
-				write "-- " + r.local_rating_mean;
-				write "-- " + r.neighbourhood_rating_mean;
-			}
-			write "----- MAL --------";
-			loop p over: malicious_particles {
-				rating_record r <- rating_db[p.name];
-				write p;
-				write "-- " + r.local_rating_mean;
-				write "-- " + r.neighbourhood_rating_mean;
-			}
+//			write "--------------------";
+//			write "------ " + self.name + " ------";
+//			write "----- MEANS -----";
+//			write "cluster 1: " + mean_cluster_one;
+//			write "cluster 2: " + mean_cluster_two;
+//			write "dist: " + distance_to(mean_cluster_one, mean_cluster_two);
+//			write "----- BENIGN -----";
+//			loop p over: benign_particles {
+//				rating_record r <- rating_db[p.name];
+//				write p;
+//				write "-- " + r.local_rating_mean;
+//				write "-- " + r.neighbourhood_rating_mean;
+//			}
+//			write "----- MAL --------";
+//			loop p over: malicious_particles {
+//				rating_record r <- rating_db[p.name];
+//				write p;
+//				write "-- " + r.local_rating_mean;
+//				write "-- " + r.neighbourhood_rating_mean;
+//			}
 //		}
 
 	}

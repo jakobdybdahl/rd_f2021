@@ -14,8 +14,8 @@ import "worker.gaml"
 species submitter parent: base_component {
 	job active_job <- nil;
 	
-	 reflex do_job when: flip(0.05) and (submitter none_matches (each.active_job != nil)) {
-//	reflex do_job when: flip(0.05) and active_job = nil {
+//	 reflex do_job when: flip(0.05) /*and (submitter none_matches (each.active_job != nil))*/ {
+	reflex do_job when: flip(0.05) and active_job = nil {
 		// create job
 		create job {
 			set start_time <- cycle;
@@ -64,7 +64,7 @@ species submitter parent: base_component {
 				c_workers <- self.particle.connected_particles collect each.worker;	
 			}	
 		} else {
-			c_workers <- (self.particle.connected_particles where (self.particle.benign_particles contains each)) collect each.worker;				
+			c_workers <- (self.particle.connected_particles where !(self.particle.malicious_particles contains each)) collect each.worker;				
 		}
 				
 		// map of connected workers <name::{declined,worker}>
