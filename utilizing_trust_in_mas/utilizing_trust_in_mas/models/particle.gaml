@@ -182,13 +182,30 @@ species particle skills: [moving] {
 		// If good result:
 		if(res >= 0) {
 			new_rating <- p_rating_gain + rating_bonus;
-		} else if(res > -1 and res < 0) {
+		} else if(res >= -2 and res < 0) {
 			// if okay-ish result:
-			new_rating <-  -p_local_rating_w1*res^2 + p_rating_gain + rating_bonus;
+			// poly:
+			 new_rating <-  -p_local_rating_w1*res^2 + p_rating_gain + rating_bonus;
+			// linear:
+//			new_rating <- 5*res+10;
 		} else {
 			// if bad result
 			new_rating <- p_minimum_rating;
 		}
+
+//		if(res >= 0) {
+//			new_rating <- p_rating_gain + rating_bonus;
+//		} else {
+//			// if bad result
+//			new_rating <- p_minimum_rating;
+//		}
+//		
+
+		// logistic
+//		new_rating <- -10/(1+exp(5*res+5))+10;
+//		if(new_rating > 0) {
+//			new_rating <- new_rating + rating_bonus;
+//		}
 		
 		// store encounter and increase total number of encounters
 		record.encounters[cycle] <- new_rating;

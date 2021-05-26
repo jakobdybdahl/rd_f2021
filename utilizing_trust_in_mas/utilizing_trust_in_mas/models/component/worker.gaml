@@ -21,6 +21,7 @@ species worker parent: base_component {
 			loop wu_in_queue over: work_queue {
 				estimated_processing_time <- estimated_processing_time + wu_in_queue.processing_units;
 			}
+//			estimated_processing_time <- int(ceil((estimated_processing_time / processing_power) * (malicious_factor = 1 ? rnd(0.9, 1.1) : rnd(0.5, 0.9))));
 			estimated_processing_time <- int(ceil((estimated_processing_time / processing_power) * malicious_factor));
 			
 			return true::estimated_processing_time;

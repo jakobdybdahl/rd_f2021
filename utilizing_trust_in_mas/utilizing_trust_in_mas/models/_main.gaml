@@ -22,7 +22,7 @@ global {
 	
 	// rating
 	int p_rating_gain <- 10;
-	int p_local_rating_w1 <- 10;
+	float p_local_rating_w1 <- 2.5;
 	int p_local_rating_w2 <- 5;
 	int p_local_rating_w3 <- 10;
 	float p_minimum_rating <- 0.5;
@@ -80,7 +80,7 @@ global {
 		int true_positive <- 0; // Rightly classified benign.
 		int true_negative <- 0; // Right classificed malicious
 		int false_positive <- 0; // Wrongly classified benign
-		int false_negative <- 0; // Wrongly classified malicious False Negative
+		int false_negative <- 0; // Wrongly classified malicious
 				
 		loop b over: benign {
 			list<float> ratings;
@@ -165,9 +165,10 @@ global {
 //	
 	reflex save {
 		save [cycle, malicious_rating, benign_rating, f1, avg_speedup, avg_number_of_work_units_distributed]  to: "data/" + "malicious_factor_" + int(malicious_factor * 100) + ".csv" type: "csv" rewrite: false;
+//		save [cycle, malicious_rating, benign_rating, f1, avg_speedup, avg_number_of_work_units_distributed]  to: "data/distance_threshold/distance_" + p_distance_treshold + ".csv" type: "csv" rewrite: false;
 	}
 	
-	init {
+	init {   
 		create benign number: number_of_particles * (1 - fraction_of_malicious);
 		create malicious number: number_of_particles * fraction_of_malicious;
 	}
@@ -182,6 +183,8 @@ experiment "Number of Malicious" type: batch repeat: 10 until: cycle = 1000 {
 //	init {
 //		filename <- "malicious_" + int(fraction_of_malicious * 100);
 //	}
+//    parameter 'Number of malicious:' var: fraction_of_malicious among: [ 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ];
+	parameter 'Distance Threshold' var: p_distance_treshold among: [ 7, 8, 9, 10, 11, 12, 13, 14];
 }
 
 experiment utilizing_trust type: gui {
