@@ -34,8 +34,8 @@ global {
 		
 	// Particles
 	int comm_radius <- 25;
-	int number_of_particles <- 100;
-	float fraction_of_malicious <- 0.0;
+	int number_of_particles <- 50;
+	float fraction_of_malicious <- 0.2;
 	float malicious_factor <- 0.5;
 	
 	// Charts data
@@ -75,7 +75,7 @@ global {
 		estimated_maliciousness <-  mean(jobs collect (each.actual_speedup / each.expected_speedup)); // only for malicious
 	}
 	
-	reflex charts_data  {
+	reflex charts_data when: every(10#cycles)  {
 		// calculate the average global rating of benign agents
 		list<float> benign_ratings;
 		
@@ -169,6 +169,8 @@ global {
 		save [cycle, malicious_rating, benign_rating, f1, avg_speedup, avg_number_of_work_units_distributed]  to: "data/" + "malicious_factor_" + int(malicious_factor * 100) + ".csv" type: "csv" rewrite: false;
 	}
 	
+//	reflex save_
+	
 	init {
 		create benign number: number_of_particles * (1 - fraction_of_malicious);
 		create malicious number: number_of_particles * fraction_of_malicious;
@@ -176,7 +178,7 @@ global {
 }
 
 
-grid navigation_cell width: 10 height: 10 neighbors: 4 { }
+grid navigation_cell width: 5 height: 5 neighbors: 4 { }
 
 experiment "Number of Malicious" type: batch repeat: 10 until: cycle = 1000 {
     // parameter 'Number of malicious:' var: malicious_factor among: [ 1.0 ];
@@ -203,10 +205,6 @@ experiment utilizing_trust type: gui {
  	parameter "Minimum rating gain for interaction" var: p_minimum_rating category: "Particle";
  	parameter "Maximum length of encounter list" var: p_maximum_encounter_length category: "Particle";
  	parameter "Distance between clusters" var: p_distance_treshold category: "Particle";
- 	
-//	reflex savedata {
-//		save [cycle, malicious_rating, benign_rating]  to: "save_data.csv" type: "csv" rewrite: false;
-//	}
 	
 	output {
 //		display main_display {

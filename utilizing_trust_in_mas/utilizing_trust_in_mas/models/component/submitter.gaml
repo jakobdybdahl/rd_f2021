@@ -52,6 +52,10 @@ species submitter parent: base_component {
 		if empty(self.particle.benign_particles) or flip(exp(-cycle / 250)) {
 			// collect all unknowns
 			c_workers <- self.particle.connected_particles where !(self.particle.rating_db contains_key each.name) collect each.worker;
+			
+			// collect all connected unclassified particles
+			c_workers <- c_workers + (self.particle.connected_particles where (self.particle.unclassified_particles contains each)) collect each.worker;
+			
 			// collect all connected known as benign (if the flip() was true then there might be some benigns to use as well)
 			c_workers <- c_workers + (self.particle.connected_particles where (self.particle.benign_particles contains each)) collect each.worker;
 			
