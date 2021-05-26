@@ -11,7 +11,7 @@ model worker
 import "base_component.gaml"
 
 species worker parent: base_component {
-	float malicious_factor <- 1.0;
+	bool is_malicious <- false;
 	int max_queue_length <- 20;
 	
 	pair<bool, int> request_to_process(work_unit wu) {		
@@ -21,8 +21,7 @@ species worker parent: base_component {
 			loop wu_in_queue over: work_queue {
 				estimated_processing_time <- estimated_processing_time + wu_in_queue.processing_units;
 			}
-//			estimated_processing_time <- int(ceil((estimated_processing_time / processing_power) * (malicious_factor = 1 ? rnd(0.9, 1.1) : rnd(0.5, 0.9))));
-			estimated_processing_time <- int(ceil((estimated_processing_time / processing_power) * malicious_factor));
+			estimated_processing_time <- int(ceil((estimated_processing_time / processing_power) * (is_malicious ?  rnd(0.5, 0.9) : rnd(0.9, 1.1))));
 			
 			return true::estimated_processing_time;
 		}

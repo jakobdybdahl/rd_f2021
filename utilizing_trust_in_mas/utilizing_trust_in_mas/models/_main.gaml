@@ -35,8 +35,7 @@ global {
 	// Particles
 	int comm_radius <- 25;
 	int number_of_particles <- 50;
-	float fraction_of_malicious <- 0.7;
-	float malicious_factor <- 0.5;
+	float fraction_of_malicious <- 0.1;
 	
 	// Charts data
 	float benign_rating <- 0.0;
@@ -165,9 +164,9 @@ global {
 
 	}
 //	
-	reflex save {
-		save [cycle, malicious_rating, benign_rating, f1, avg_speedup, avg_number_of_work_units_distributed]  to: "data/" + "malicious_factor_" + int(malicious_factor * 100) + ".csv" type: "csv" rewrite: false;
-	}
+//	reflex save {
+//		save [cycle, malicious_rating, benign_rating, f1, avg_speedup, avg_number_of_work_units_distributed]  to: "data/" + "malicious_factor_" + int(malicious_factor * 100) + ".csv" type: "csv" rewrite: false;
+//	}
 	
 	init {
 		create benign number: number_of_particles * (1 - fraction_of_malicious);
