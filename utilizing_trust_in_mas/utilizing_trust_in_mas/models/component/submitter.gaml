@@ -47,22 +47,10 @@ species submitter parent: base_component {
 		
 		 // write self.name + ': starting job consisting of ' + n_of_work_units + ' work units';
 		
-		
 		list<worker> c_workers <- nil;
-		if empty(self.particle.benign_particles) or flip(exp(-cycle / 250)) {
-			// collect all unknowns
-			c_workers <- self.particle.connected_particles where !(self.particle.rating_db contains_key each.name) collect each.worker;
-			
-			// collect all connected unclassified particles
-			c_workers <- c_workers + (self.particle.connected_particles where (self.particle.unclassified_particles contains each)) collect each.worker;
-			
-			// collect all connected known as benign (if the flip() was true then there might be some benigns to use as well)
-			c_workers <- c_workers + (self.particle.connected_particles where (self.particle.benign_particles contains each)) collect each.worker;
-			
-			if(length(c_workers) = 0) {
-				// if we are not in radius with any unknowns nor benigns then just use all connected
-				c_workers <- self.particle.connected_particles collect each.worker;	
-			}	
+		if flip(0.1) {
+			// sometimes use all of the connected particles - give particles classified ass malicios a chance
+			c_workers <- self.particle.connected_particles collect each.worker;	
 		} else {
 			c_workers <- (self.particle.connected_particles where !(self.particle.malicious_particles contains each)) collect each.worker;				
 		}

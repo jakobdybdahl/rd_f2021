@@ -175,7 +175,7 @@ global {
 }
 
 
-grid navigation_cell width: 5 height: 5 neighbors: 4 { }
+grid navigation_cell width: 10 height: 10 neighbors: 4 { }
 
 experiment "Number of Malicious" type: batch repeat: 10 until: cycle = 1000 {
     // parameter 'Number of malicious:' var: malicious_factor among: [ 1.0 ];
