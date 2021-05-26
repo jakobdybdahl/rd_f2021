@@ -50,17 +50,18 @@ species submitter parent: base_component {
 		
 		list<worker> c_workers <- nil;
 		if empty(self.particle.benign_particles) or flip(exp(-cycle / 250)) {
+			// collect all unknowns
 			c_workers <- self.particle.connected_particles where !(self.particle.rating_db contains_key each.name) collect each.worker;
+			// collect all connected known as benign (if the flip() was true then there might be some benigns to use as well)
+			c_workers <- c_workers + (self.particle.connected_particles where (self.particle.benign_particles contains each)) collect each.worker;
 			
 			if(length(c_workers) = 0) {
+				// if we are not in radius with any unknowns nor benigns then just use all connected
 				c_workers <- self.particle.connected_particles collect each.worker;	
 			}	
 		} else {
 			c_workers <- (self.particle.connected_particles where (self.particle.benign_particles contains each)) collect each.worker;				
 		}
-		
-//		c_workers <- self.particle.connected_particles collect each.worker;
-//		c_workers <- worker collect each;
 				
 		// map of connected workers <name::{declined,worker}>
 		map<string, pair<bool, worker>> workers <- c_workers as_map (each.name :: (false::each));
@@ -114,6 +115,8 @@ species submitter parent: base_component {
 		}
 		
 		active_job.work_units_processed_by_self <- active_job.work_units count (each.bidder.value = nil);
+		active_job.number_of_available_workers <- length(c_workers) + 1; // connected workers + our self
+		
 	}
 	
 	action receive_work_unit_result(base_component from, int work_unit_id) {
