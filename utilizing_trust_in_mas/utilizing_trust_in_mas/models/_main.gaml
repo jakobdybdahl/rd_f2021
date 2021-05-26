@@ -35,7 +35,7 @@ global {
 	// Particles
 	int comm_radius <- 25;
 	int number_of_particles <- 100;
-	float fraction_of_malicious <- 0.2;
+	float fraction_of_malicious <- 0.0;
 	float malicious_factor <- 0.5;
 	
 	// Charts data
@@ -46,6 +46,7 @@ global {
 	float avg_speedup_diff <- 0.0;
 	float estimated_maliciousness <- 0.0;
 	float f1 <- 0.0;
+	float avg_number_of_available_workers <- 0.0;
 	
 	list<job> slow_jobs <- [];
 	
@@ -64,6 +65,7 @@ global {
 			add res at: 0 to: results;
 		}
 		avg_number_of_work_units_distributed <- 1 - mean(results);
+		avg_number_of_available_workers <- mean(jobs collect each.number_of_available_workers);
 	}
 	
 	reflex set_speedup {	
@@ -232,6 +234,7 @@ experiment utilizing_trust type: gui {
 		monitor "Percentage of work units distributed" value: avg_number_of_work_units_distributed;
 		monitor "F1-score" value: f1;
 		monitor "Malciousness" value: estimated_maliciousness;
+		monitor "Average number of available workers when starting job" value: avg_number_of_available_workers;
 	}
 }
 

@@ -30,5 +30,6 @@ species job {
 	int work_units_processed_by_self <- 0;
 	float expected_speedup <- 0.0;
 	float actual_speedup <- 0.0;
+	int number_of_available_workers <- 0;
 }
 
